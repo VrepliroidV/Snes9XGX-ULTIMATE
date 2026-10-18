@@ -882,7 +882,7 @@ static void WindowCredits(void * ptr)
 
 	char wiiDetails[30];
 	char wiiInfo[20];
-	char controllerInfo[50];
+	char controllerInfo[80] = "";
 
 #ifdef HW_RVL
 	if(!IsWiiU()) {
@@ -895,7 +895,7 @@ static void WindowCredits(void * ptr)
 		sprintf(wiiInfo, "vWii (729 MHz)");
 	}
 	sprintf(wiiDetails, "IOS: %d / %s", IOS_GetVersion(), wiiInfo);
-	sprintf(controllerInfo, GetUSBControllerInfo());
+	snprintf(controllerInfo, sizeof(controllerInfo), "%s", GetUSBControllerInfo());
 #endif
 
 	txt[i] = new GuiText(controllerInfo, 14, (GXColor){0, 0, 0, 255});

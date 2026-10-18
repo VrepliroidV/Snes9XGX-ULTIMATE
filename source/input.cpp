@@ -37,7 +37,7 @@
 
 #ifdef HW_RVL
 #include "utils/mayflash.h"
-#include "utils/xbox360.h"
+#include "utils/xinput_usb.h"
 #endif
 
 #define ANALOG_SENSITIVITY 30
@@ -49,6 +49,30 @@
 static ss_instance_t sicksaxis;
 int ds3chan = 0;
 #define SICKSAXIS_DEADZONE 115
+
+// Xbox 360 / XInput USB controllers (utils/xinput_usb.c) act as GameCube
+// controllers: controller N on the USB side feeds GameCube port N, in menus
+// and in game, and uses the GameCube button mapping.
+static u16 usbPadHeld[4] = {0,0,0,0};
+
+static u16 XInputToGCPad(u32 x)
+{
+	u16 p = 0;
+	if (x & (XI_ANY_UP    | XI_RSTICK_UP))    p |= PAD_BUTTON_UP;
+	if (x & (XI_ANY_DOWN  | XI_RSTICK_DOWN))  p |= PAD_BUTTON_DOWN;
+	if (x & (XI_ANY_LEFT  | XI_RSTICK_LEFT))  p |= PAD_BUTTON_LEFT;
+	if (x & (XI_ANY_RIGHT | XI_RSTICK_RIGHT)) p |= PAD_BUTTON_RIGHT;
+	// face buttons by position, like the SNES pad: bottom A -> B, right B -> A
+	if (x & XI_A) p |= PAD_BUTTON_B;
+	if (x & XI_B) p |= PAD_BUTTON_A;
+	if (x & XI_X) p |= PAD_BUTTON_Y;
+	if (x & XI_Y) p |= PAD_BUTTON_X;
+	if (x & (XI_LB | XI_LT)) p |= PAD_TRIGGER_L;
+	if (x & (XI_RB | XI_RT)) p |= PAD_TRIGGER_R;
+	if (x & XI_START) p |= PAD_BUTTON_START;
+	if (x & XI_BACK)  p |= PAD_TRIGGER_Z;
+	return p;
+}
 #endif
 
 int playerMapping[4] = {0,1,2,3};
@@ -340,7 +364,7 @@ UpdatePads()
 	#ifdef HW_RVL
 	WiiDRC_ScanPads();
 	Mayflash_ScanPads();
-	XBOX360_ScanPads();
+	XInput_Update();
 	WPAD_ScanPads();
 	#endif
 
@@ -377,6 +401,16 @@ UpdatePads()
 		userInput[i].pad.triggerL = PAD_TriggerL(i);
 		userInput[i].pad.triggerR = PAD_TriggerR(i);
 	}
+#ifdef HW_RVL
+	for(int i=0; i < 4; i++)
+	{
+		u16 usb = XInputToGCPad(XInput_ButtonsHeld(i));
+		userInput[i].pad.btns_d |= usb & ~usbPadHeld[i];
+		userInput[i].pad.btns_u |= usbPadHeld[i] & ~usb;
+		userInput[i].pad.btns_h |= usb;
+		usbPadHeld[i] = usb;
+	}
+#endif
 #ifdef HW_RVL
 	if(WiiDRC_Inited() && WiiDRC_Connected())
 	{
@@ -523,7 +557,7 @@ static void decodepad (int chan, int emuChan)
 	u32 wiidrcp = userInput[chan].wiidrcdata.btns_h;
 
 	jp |= Mayflash_ButtonsHeld(chan);
-    jp |= XBOX360_ButtonsHeld(chan);
+	// XInput USB controllers are already in userInput[chan].pad (UpdatePads)
 #endif
 
 #ifdef HW_RVL
@@ -1029,8 +1063,8 @@ void SetDefaultButtonMap ()
 #ifdef HW_RVL
 char* GetUSBControllerInfo()
 {
-	static char info[50];
-	snprintf(info, 50, "Mayflash: %s, XBOX360: %s", Mayflash_Status(), XBOX360_Status());
+	static char info[80];
+	snprintf(info, sizeof(info), "Mayflash: %s, USB X360: %s", Mayflash_Status(), XInput_Status());
 	return info;
 }
 #endif
