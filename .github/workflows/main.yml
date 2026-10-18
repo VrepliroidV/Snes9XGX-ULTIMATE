@@ -7,6 +7,7 @@ jobs:
     name: Build Snes9x TX
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
         image: ["Wii", "GameCube"]
     container: devkitpro/devkitppc:latest
@@ -18,8 +19,14 @@ jobs:
 
     - name: Build Wii
       if: ${{ matrix.image == 'Wii' }}
+      shell: bash
       run: |
-        make -f Makefile.wii -j2
+        set -o pipefail
+        if ! make -f Makefile.wii -j2 2>&1 | tee build.log; then
+          msg=$(grep -E -i -B2 -A2 "error|undefined reference|cannot find|no such file|not found" build.log | tail -n 80 | sed -e 's/%/%25/g' -e 's/\r//g' | awk '{printf "%s%%0A", $0}')
+          echo "::error title=Wii build failed::$msg"
+          exit 1
+        fi
     
     - name: Copy Wii artifact
       if: ${{ matrix.image == 'Wii' }}
@@ -44,8 +51,14 @@ jobs:
     
     - name: Build GameCube
       if: ${{ matrix.image == 'GameCube' }}
+      shell: bash
       run: |
-        make -f Makefile.gc -j2
+        set -o pipefail
+        if ! make -f Makefile.gc -j2 2>&1 | tee build.log; then
+          msg=$(grep -E -i -B2 -A2 "error|undefined reference|cannot find|no such file|not found" build.log | tail -n 80 | sed -e 's/%/%25/g' -e 's/\r//g' | awk '{printf "%s%%0A", $0}')
+          echo "::error title=GameCube build failed::$msg"
+          exit 1
+        fi
         
     - name: Copy GameCube artifact
       if: ${{ matrix.image == 'GameCube' }}
