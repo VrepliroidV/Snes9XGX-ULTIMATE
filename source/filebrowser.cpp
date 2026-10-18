@@ -78,6 +78,7 @@ int autoLoadMethod()
 
 	if(GCSettings.LoadMethod == DEVICE_AUTO)
 		GCSettings.LoadMethod = device; // save device found for later use
+	STARTUP_NOTE("load device found: %d", device);
 	CancelAction();
 	return device;
 }

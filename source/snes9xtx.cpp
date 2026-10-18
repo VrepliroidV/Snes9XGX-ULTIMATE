@@ -440,6 +440,7 @@ int main(int argc, char *argv[])
 	SetupPads();
 	InitDeviceThread();
 	MountAllFAT(); // Initialize libFAT for SD and USB
+	STARTUP_NOTE("main: storage mounted");
 	
 	#ifdef HW_RVL
 	// store path app was loaded from
@@ -483,6 +484,7 @@ int main(int argc, char *argv[])
 		autoboot = GCSettings.AutoloadGame;
 	}
 
+	STARTUP_NOTE("main: opening the menu");
 	while (1) // main loop
 	{
 		if(!autoboot) {

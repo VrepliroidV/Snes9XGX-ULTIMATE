@@ -336,6 +336,11 @@ UpdateGUI (void *arg)
 		if(guiHalt)
 			LWP_SuspendThread(guithread);
 
+		static bool firstFrame = true;
+		if(firstFrame) {
+			firstFrame = false;
+			STARTUP_NOTE("gui: first frame");
+		}
 		UpdatePads();
 		mainWindow->Draw();
 
@@ -456,6 +461,7 @@ ProgressWindow(char *title, char *msg)
 		return;
 
 	HaltGui();
+	STARTUP_NOTE("progress window shown: %s", msg);
 	int oldState = mainWindow->GetState();
 	mainWindow->SetState(STATE_DISABLED);
 	mainWindow->Append(&promptWindow);
@@ -497,6 +503,7 @@ ProgressWindow(char *title, char *msg)
 	HaltGui();
 	mainWindow->Remove(&promptWindow);
 	mainWindow->SetState(oldState);
+	STARTUP_NOTE("progress window hidden");
 	ResumeGui();
 }
 
@@ -588,6 +595,7 @@ ShowAction (const char *msg)
 	if(showProgress != 0)
 		CancelAction(); // wait for previous progress window to finish
 
+	STARTUP_NOTE("action: %s", msg);
 	snprintf(progressMsg, 200, "%s", msg);
 	sprintf(progressTitle, "Please Wait");
 	showProgress = 2;
@@ -598,6 +606,7 @@ ShowAction (const char *msg)
 
 void ErrorPrompt(const char *msg)
 {
+	STARTUP_NOTE("error prompt: %s", msg);
 	WindowPrompt("Error", msg, "OK", NULL);
 }
 
@@ -981,6 +990,7 @@ static char* getImageFolder()
 
 static int MenuGameSelection()
 {
+	STARTUP_NOTE("menu: game selection");
 	int menu = MENU_NONE;
 	bool res;
 	int i;
@@ -4936,10 +4946,12 @@ MainMenu (int menu)
 
 	if(currentMenu == MENU_GAMESELECTION)
 		ResumeGui();
+	STARTUP_NOTE("menu: GUI running");
 
 	if(firstRun) {
 		if(!LoadPrefs())
 			SavePrefs(SILENT);
+		STARTUP_NOTE("menu: settings loaded");
 	}
 
 #ifdef HW_RVL

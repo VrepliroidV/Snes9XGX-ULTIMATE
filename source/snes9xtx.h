@@ -185,4 +185,13 @@ enum {
 
 void ApplyRegionSetting();
 
+// Start-up markers in the USB log (sd:/snes9xtx/xinput_usb.log), for the
+// crash that happens when a USB device connects while the menu opens.
+#ifdef HW_RVL
+#include "utils/xinput_usb.h"
+#define STARTUP_NOTE(...) XInput_LogNote(__VA_ARGS__)
+#else
+#define STARTUP_NOTE(...) do { } while (0)
+#endif
+
 #endif
