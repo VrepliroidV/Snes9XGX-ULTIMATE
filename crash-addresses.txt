@@ -1,3 +1,3 @@
 # Exception (DSI) with the Retroflag receiver and the external HD plugged in
-# build 26abab6, DAR 00000060 (read at offset 0x60 of a NULL pointer)
-0x80079a5c 0x8007b898 0x8020fb98 0x8020fb44
+# DAR 00000060 = GuiElement::effects of a NULL element. LR differs between the two photos.
+0x80079a5c 0x8007b898 0x8007b690 0x8007b6b0 0x8020fb98

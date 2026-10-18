@@ -34,9 +34,7 @@ jobs:
     - name: Resolve crash addresses
       if: ${{ matrix.image == 'Wii' && hashFiles('crash-addresses.txt') != '' }}
       shell: bash
-      run: |
-        out=$($DEVKITPPC/bin/powerpc-eabi-addr2line -f -C -i -p -e executables/snes9xtx-wii.elf $(grep -v "^#" crash-addresses.txt | tr -s " ,\n" " ") 2>&1 | sed -e 's/%/%25/g' | awk '{printf "%s%%0A", $0}')
-        echo "::notice title=Crash addresses::$out"
+      run: bash .github/resolve-crash.sh executables/snes9xtx-wii.elf crash-addresses.txt
 
     - name: Copy Wii artifact
       if: ${{ matrix.image == 'Wii' }}
