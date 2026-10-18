@@ -1,18 +1,18 @@
 name: Snes9x TX Build
 
-on: [push, pull_request]
+on: [push, pull_request, workflow_dispatch]
 
 jobs:
   build:
     name: Build Snes9x TX
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     strategy:
       matrix:
         image: ["Wii", "GameCube"]
     container: devkitpro/devkitppc:latest
  
     steps:
-    - uses: actions/checkout@v1
+    - uses: actions/checkout@v4
       with:
         submodules: true
 
@@ -35,7 +35,7 @@ jobs:
         cp executables/snes9xtx-wii.dol dist/Snes9xTX/apps/snes9xtx/boot.dol
 
     - name: Upload Wii artifacts
-      uses: actions/upload-artifact@v3.1.0
+      uses: actions/upload-artifact@v4
       if: ${{ matrix.image == 'Wii' }}
       with: 
         name: Snes9xTX
@@ -54,7 +54,7 @@ jobs:
         cp executables/snes9xtx-gc.dol dist/Snes9xTX-GameCube/
     
     - name: Upload GameCube artifact
-      uses: actions/upload-artifact@v3.1.0
+      uses: actions/upload-artifact@v4
       if: ${{ matrix.image == 'GameCube' }}
       with: 
         name: Snes9xTX-GameCube
