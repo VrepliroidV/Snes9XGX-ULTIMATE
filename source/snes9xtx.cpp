@@ -200,6 +200,18 @@ void ipl_set_config(unsigned char c)
 #endif
 
 /****************************************************************************
+ * ApplyRegionSetting()
+ * Called before every ROM load: Memory.LoadROM() clears ForceNTSC/ForcePAL
+ * once it has used them, so the menu choice is applied again each time.
+ ***************************************************************************/
+void ApplyRegionSetting()
+{
+	Settings.ForceNTSC = (GCSettings.Region == REGION_NTSC || GCSettings.Region == REGION_NTSC_LIE_PAL);
+	Settings.ForcePAL = (GCSettings.Region == REGION_PAL);
+	Settings.NTSCLiePAL = (GCSettings.Region == REGION_NTSC_LIE_PAL);
+}
+
+/****************************************************************************
  * setFrameTimerMethod()
  * change frametimer method depending on whether ROM is NTSC or PAL
  ***************************************************************************/

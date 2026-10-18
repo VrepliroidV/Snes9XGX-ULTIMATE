@@ -519,6 +519,7 @@ int BrowserLoadFile()
 
 	SNESROMSize = 0;
 	S9xDeleteCheats();
+	ApplyRegionSetting(); // the core clears the force flags after each load
 	Memory.LoadROM("ROM");
 
 	if (SNESROMSize == 0)

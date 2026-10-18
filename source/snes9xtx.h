@@ -146,7 +146,7 @@ struct SGCSettings{
 	int		cpuOverclock;
 	int		NoSpriteLimit;
 	int		Satellaview;
-	int		Region;
+	int		Region; // REGION_AUTO, REGION_NTSC, REGION_PAL, REGION_NTSC_LIE_PAL
 	int		WiimoteOrientation;
 	int		ExitAction;
 	int		MusicVolume;
@@ -175,4 +175,14 @@ static inline bool IsWiiUFastCPU(void)
 {
 	return ((*(vu16*)0xCD8005A0 == 0xCAFE) && ((*(vu32*)0xCD8005B0 & 0x20) == 0));
 }
+enum {
+	REGION_AUTO = 0,
+	REGION_NTSC,
+	REGION_PAL,
+	REGION_NTSC_LIE_PAL, // NTSC timing, the game is told PAL ($213F bit 4)
+	REGION_COUNT
+};
+
+void ApplyRegionSetting();
+
 #endif

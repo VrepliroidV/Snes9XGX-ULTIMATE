@@ -4821,25 +4821,10 @@ static int MenuSettingsEmulation()
 				break;
 
 			case 1:
+				// applied on every ROM load (ApplyRegionSetting) and saved
 				GCSettings.Region++;
-				if (GCSettings.Region > 2) {
-					GCSettings.Region = 0;
-				}
-				switch(GCSettings.Region)
-				{
-					case 0:
-						Settings.ForceNTSC = false;
-						Settings.ForcePAL = false;
-						break;
-					case 1:
-						Settings.ForceNTSC = true;
-						Settings.ForcePAL = false;
-						break;
-					case 2:
-						Settings.ForceNTSC = false;
-						Settings.ForcePAL = true;
-						break;
-				}
+				if (GCSettings.Region >= REGION_COUNT)
+					GCSettings.Region = REGION_AUTO;
 				break;
 		}
 
@@ -4851,12 +4836,14 @@ static int MenuSettingsEmulation()
 
 			switch(GCSettings.Region)
 			{
-				case 0:
-					sprintf (options.value[1], "Automatic"); break;
-				case 1:
+				case REGION_NTSC:
 					sprintf (options.value[1], "NTSC"); break;
-				case 2:
+				case REGION_PAL:
 					sprintf (options.value[1], "PAL"); break;
+				case REGION_NTSC_LIE_PAL:
+					sprintf (options.value[1], "NTSC (Lie to PAL)"); break;
+				default:
+					sprintf (options.value[1], "Automatic"); break;
 			}
 			optionBrowser.TriggerUpdate();
 		}

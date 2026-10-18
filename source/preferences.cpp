@@ -167,6 +167,7 @@ preparePrefsData ()
 	createXMLSection("Emulation", "Emulation Settings");
 
 	createXMLSetting("Satellaview", "Satellaview BIOS", toStr(GCSettings.Satellaview));
+	createXMLSetting("Region", "Region", toStr(GCSettings.Region));
 
 	createXMLSection("Menu", "Menu Settings");
 
@@ -360,6 +361,7 @@ decodePrefsData ()
 			// Emulation Settings
 
 			loadXMLSetting(&GCSettings.Satellaview, "Satellaview");
+			loadXMLSetting(&GCSettings.Region, "Region");
 
 			// Menu Settings
 
@@ -418,6 +420,8 @@ void FixInvalidSettings()
 		GCSettings.yshift = 0;
 	if(!(GCSettings.MusicVolume >= 0 && GCSettings.MusicVolume <= 100))
 		GCSettings.MusicVolume = 80;
+	if(GCSettings.Region < REGION_AUTO || GCSettings.Region >= REGION_COUNT)
+		GCSettings.Region = REGION_AUTO;
 	if(!(GCSettings.SFXVolume >= 0 && GCSettings.SFXVolume <= 100))
 		GCSettings.SFXVolume = 20;
 	if(GCSettings.language < 0 || GCSettings.language >= LANG_LENGTH)
@@ -465,6 +469,7 @@ DefaultSettings ()
 	GCSettings.yshift = 0; // Vertical video shift
 
 	GCSettings.Satellaview = 1; // Enabled by default
+	GCSettings.Region = REGION_AUTO;
 
 	GCSettings.WiimoteOrientation = 0;
 	GCSettings.ExitAction = 0;
