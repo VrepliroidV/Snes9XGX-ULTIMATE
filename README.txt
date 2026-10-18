@@ -7,6 +7,20 @@ Snes9x TX is a fork of Snes9x GX: https://github.com/dborth/snes9xgx
 Update History
 --------------
 
+---Snes9x TX 1.1.3-usb.1 (VrepliroidV)---
+---October 18 2026---
+
+- Xbox 360 (XInput) USB controllers, wired or through a 2.4 GHz receiver
+  plugged into the Wii (tested: Retroflag Classic Controller-M wireless and a
+  generic SNES Classic Mini wireless pad). Up to 4, hot-plug, read as
+  GameCube controllers. L + Select + Start opens the menu.
+- The region option is applied on every game load
+- New region option: NTSC (Lie to PAL), NTSC timing with a PAL console
+- bg_music.ogg is also looked for in the app folder and in usb:/snes9xtx
+- Fixed the DualShock 3 support polling an invalid handle whenever another
+  USB HID device was plugged in (crash at start-up with some receivers)
+- Downloads: https://github.com/VrepliroidV/Snes9xTX/releases
+
 ---Snes9x TX 1.1.3---
 ---January 15 2023---
 

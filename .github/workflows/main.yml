@@ -47,6 +47,7 @@ jobs:
         touch dist/Snes9xTX/snes9xtx/cheats/cheatsdir
         touch dist/Snes9xTX/snes9xtx/saves/savesdir
         cp hbc/* dist/Snes9xTX/apps/snes9xtx/
+        cp LICENSE dist/Snes9xTX/apps/snes9xtx/
         cp executables/snes9xtx-wii.dol dist/Snes9xTX/apps/snes9xtx/boot.dol
 
     - name: Upload Wii artifacts
@@ -72,7 +73,7 @@ jobs:
       if: ${{ matrix.image == 'GameCube' }}
       run: | 
         mkdir -p dist/Snes9xTX-GameCube
-        cp executables/snes9xtx-gc.dol dist/Snes9xTX-GameCube/
+        cp executables/snes9xtx-gc.dol LICENSE dist/Snes9xTX-GameCube/
     
     - name: Upload GameCube artifact
       uses: actions/upload-artifact@v4
@@ -81,3 +82,32 @@ jobs:
         name: Snes9xTX-GameCube
         path: |
          dist/Snes9xTX-GameCube/
+
+  # Pushing a tag (for example v1.1.3-usb.2) publishes a release with the
+  # notes in .github/RELEASE_NOTES.md and both builds as .zip files.
+  release:
+    name: Publish release
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+    - uses: actions/checkout@v4
+
+    - uses: actions/download-artifact@v4
+      with:
+        path: artifacts
+
+    - name: Zip and publish
+      env:
+        GH_TOKEN: ${{ github.token }}
+        GH_REPO: ${{ github.repository }}
+        TAG: ${{ github.ref_name }}
+      run: |
+        (cd artifacts/Snes9xTX && zip -r -X "$GITHUB_WORKSPACE/Snes9xTX-Wii.zip" .)
+        (cd artifacts/Snes9xTX-GameCube && zip -r -X "$GITHUB_WORKSPACE/Snes9xTX-GameCube.zip" .)
+        if ! gh release view "$TAG" > /dev/null 2>&1; then
+          gh release create "$TAG" --verify-tag --title "Snes9x TX $TAG" --notes-file .github/RELEASE_NOTES.md
+        fi
+        gh release upload "$TAG" Snes9xTX-Wii.zip Snes9xTX-GameCube.zip --clobber

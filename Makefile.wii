@@ -28,7 +28,6 @@ INCLUDES	:=	source source/snes9x
 #---------------------------------------------------------------------------------
 
 CFLAGS	= -g -O3 -Wall $(MACHDEP) $(INCLUDE) `$(DEVKITPRO)/portlibs/ppc/bin/powerpc-eabi-pkg-config --cflags freetype2` \
-				-DXINPUT_USB_LOG='"sd:/snes9xtx/xinput_usb.log"' \
 				-DHAVE_STDINT_H -DBLARGG_NONPORTABLE -DBLARGG_BIG_ENDIAN -DBLARGG_CPU_POWERPC \
 				-DZLIB -DRIGHTSHIFT_IS_SAR -DCPU_SHUTDOWN -DCORRECT_VRAM_READS \
 				-D_SZ_ONE_DIRECTORY -D_LZMA_IN_CB -D_LZMA_OUT_READ \
