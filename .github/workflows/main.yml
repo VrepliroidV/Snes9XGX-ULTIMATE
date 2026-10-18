@@ -10,7 +10,8 @@ jobs:
       fail-fast: false
       matrix:
         image: ["Wii", "GameCube"]
-    container: devkitpro/devkitppc:latest
+    # same devkitPPC as the official Snes9x TX 1.1.3 release (January 2023)
+    container: devkitpro/devkitppc:20230110
  
     steps:
     - uses: actions/checkout@v4
