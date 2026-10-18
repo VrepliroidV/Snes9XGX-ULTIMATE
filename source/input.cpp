@@ -73,6 +73,16 @@ static u16 XInputToGCPad(u32 x)
 	if (x & XI_BACK)  p |= PAD_TRIGGER_Z;
 	return p;
 }
+
+// Menu combo for XInput USB pads, which have no Home button: L + Select +
+// Start, read from the pad itself so the GameCube button mapping does not
+// change it. Some receivers send Guide instead of Select + Start, so L + Guide
+// counts too.
+static bool UsbPadMenuCombo(int port)
+{
+	u32 x = XInput_ButtonsHeld(port);
+	return (x & XI_LB) && (((x & XI_BACK) && (x & XI_START)) || (x & XI_GUIDE));
+}
 #endif
 
 int playerMapping[4] = {0,1,2,3};
@@ -781,7 +791,8 @@ bool MenuRequested()
 			(userInput[i].wiidrcdata.btns_h & WIIDRC_BUTTON_HOME) ||
 			(userInput[i].wpad->btns_h & WPAD_CLASSIC_BUTTON_FULL_L &&
 			userInput[i].wpad->btns_h & WPAD_CLASSIC_BUTTON_FULL_R &&
-			userInput[i].wpad->btns_h & WPAD_CLASSIC_BUTTON_PLUS)
+			userInput[i].wpad->btns_h & WPAD_CLASSIC_BUTTON_PLUS) ||
+			UsbPadMenuCombo(i)
 			#endif
 		)
 		{

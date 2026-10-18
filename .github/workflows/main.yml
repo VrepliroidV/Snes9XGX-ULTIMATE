@@ -29,6 +29,15 @@ jobs:
           exit 1
         fi
     
+    # Exception screens show code addresses. List them (SRR0 and the stack
+    # dump) in crash-addresses.txt and this step names the functions.
+    - name: Resolve crash addresses
+      if: ${{ matrix.image == 'Wii' && hashFiles('crash-addresses.txt') != '' }}
+      shell: bash
+      run: |
+        out=$($DEVKITPPC/bin/powerpc-eabi-addr2line -f -C -i -p -e executables/snes9xtx-wii.elf $(tr -s ' ,\n' ' ' < crash-addresses.txt) 2>&1 | sed -e 's/%/%25/g' | awk '{printf "%s%%0A", $0}')
+        echo "::notice title=Crash addresses::$out"
+
     - name: Copy Wii artifact
       if: ${{ matrix.image == 'Wii' }}
       run: | 
