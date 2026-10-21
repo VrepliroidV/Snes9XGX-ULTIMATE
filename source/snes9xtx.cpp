@@ -49,6 +49,7 @@
 #include "snes9x/snes9x.h"
 #include "snes9x/fxemu.h"
 #include "snes9x/memmap.h"
+#include "snes9x/autooc.h"
 #include "snes9x/apu/apu.h"
 #include "snes9x/controls.h"
 
@@ -123,24 +124,43 @@ void ApplyEmulationSettings()
 		case 6: Settings.SuperFXSpeedPerLine = 0.417 * 120.5e6; break;
 	}
 
+	ApplyCpuOverclock();
+}
+
+/****************************************************************************
+ * ApplyCpuOverclock
+ *
+ * CPU cycle timing of GCSettings.cpuOverclock. Auto picks the level while the
+ * game runs, starting from none.
+ ***************************************************************************/
+void ApplyCpuOverclock()
+{
+	if (GCSettings.cpuOverclock == CPU_OVERCLOCK_AUTO)
+	{
+		S9xAutoOCSetEnabled(TRUE);
+		return;
+	}
+
+	S9xAutoOCSetEnabled(FALSE);
+
 	switch (GCSettings.cpuOverclock)
 	{
-		case 0:
+		case CPU_OVERCLOCK_NONE:
 			Settings.OneClockCycle = 6;
 			Settings.OneSlowClockCycle = 8;
 			Settings.TwoClockCycles = 12;
 			break;
-		case 1:
+		case CPU_OVERCLOCK_LOW:
 			Settings.OneClockCycle = 6;
 			Settings.OneSlowClockCycle = 6;
 			Settings.TwoClockCycles = 12;
 			break;
-		case 2:
+		case CPU_OVERCLOCK_MEDIUM:
 			Settings.OneClockCycle = 4;
 			Settings.OneSlowClockCycle = 5;
 			Settings.TwoClockCycles = 6;
 			break;
-		case 3:
+		case CPU_OVERCLOCK_MAX:
 			Settings.OneClockCycle = 3;
 			Settings.OneSlowClockCycle = 3;
 			Settings.TwoClockCycles = 3;
@@ -595,12 +615,15 @@ int main(int argc, char *argv[])
 		while(1) // emulation loop
 		{
 			S9xMainLoop();
+			if (AutoOC.enabled)
+				S9xAutoOCEndFrame();
 			ReportButtons();
 
 			if (ResetRequested)
 			{
 				S9xSoftReset(); // reset game
 				AutoCropReset();
+				S9xAutoOCReset();
 				ResetRequested = 0;
 			}
 			if (ConfigRequested)

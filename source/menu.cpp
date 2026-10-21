@@ -43,6 +43,7 @@
 #include "snes9x/snes9x.h"
 #include "snes9x/fxemu.h"
 #include "snes9x/memmap.h"
+#include "snes9x/autooc.h"
 #include "snes9x/apu/apu.h"
 #include "snes9x/cheats.h"
 
@@ -1713,6 +1714,7 @@ static int MenuGame()
 			{
 				S9xSoftReset ();
 				AutoCropReset();
+				S9xAutoOCReset();
 				menu = MENU_EXIT;
 			}
 		}
@@ -4308,36 +4310,15 @@ static int MenuSettingsHacks()
 				}
 				S9xResetSuperFX();
 				S9xReset();
+				S9xAutoOCReset();
 				break;
 
 			case 1:
 				GCSettings.cpuOverclock++;
-				if (GCSettings.cpuOverclock > 3) {
-					GCSettings.cpuOverclock = 0;
+				if (GCSettings.cpuOverclock >= CPU_OVERCLOCK_COUNT) {
+					GCSettings.cpuOverclock = CPU_OVERCLOCK_NONE;
 				}
-				switch(GCSettings.cpuOverclock)
-				{
-					case 0:
-						Settings.OneClockCycle = 6;
-						Settings.OneSlowClockCycle = 8;
-						Settings.TwoClockCycles = 12;
-						break;
-					case 1:
-						Settings.OneClockCycle = 6;
-						Settings.OneSlowClockCycle = 6;
-						Settings.TwoClockCycles = 12;
-						break;
-					case 2:
-						Settings.OneClockCycle = 4;
-						Settings.OneSlowClockCycle = 5;
-						Settings.TwoClockCycles = 6;
-						break;
-					case 3:
-						Settings.OneClockCycle = 3;
-						Settings.OneSlowClockCycle = 3;
-						Settings.TwoClockCycles = 3;
-						break;
-				}
+				ApplyCpuOverclock();
 				break;
 
 			case 2:
@@ -4377,6 +4358,8 @@ static int MenuSettingsHacks()
 					sprintf (options.value[1], "Medium"); break;
 				case 3:
 					sprintf (options.value[1], "Max"); break;
+				case CPU_OVERCLOCK_AUTO:
+					sprintf (options.value[1], "Auto"); break;
 			}
 
 			sprintf (options.value[2], "%s", GCSettings.NoSpriteLimit == 1 ? "On" : "Off");

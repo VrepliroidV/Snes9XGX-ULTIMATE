@@ -34,6 +34,7 @@
 
 #include "snes9x/snes9x.h"
 #include "snes9x/memmap.h"
+#include "snes9x/autooc.h"
 #include "snes9x/cheats.h"
 
 extern "C" {
@@ -531,6 +532,8 @@ int BrowserLoadFile()
 	}
 	else
 	{
+		S9xAutoOCLoadGame(); // the automatic overclock starts from none
+
 		// load SRAM or snapshot
 		if (GCSettings.AutoLoad == 1)
 			LoadSRAMAuto(SILENT);

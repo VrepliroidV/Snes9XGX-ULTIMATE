@@ -186,8 +186,19 @@ enum {
 	REGION_COUNT
 };
 
+// GCSettings.cpuOverclock
+enum {
+	CPU_OVERCLOCK_NONE = 0,
+	CPU_OVERCLOCK_LOW,
+	CPU_OVERCLOCK_MEDIUM,
+	CPU_OVERCLOCK_MAX,
+	CPU_OVERCLOCK_AUTO, // chosen while the game runs (snes9x/autooc.cpp)
+	CPU_OVERCLOCK_COUNT
+};
+
 void ApplyRegionSetting();
 void ApplyEmulationSettings();
+void ApplyCpuOverclock();
 
 // Start-up markers in the USB log (sd:/snes9xtx/xinput_usb.log), for the
 // crash that happens when a USB device connects while the menu opens.

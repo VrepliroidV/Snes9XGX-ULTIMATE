@@ -427,6 +427,8 @@ void FixInvalidSettings()
 		GCSettings.MusicVolume = 80;
 	if(GCSettings.Region < REGION_AUTO || GCSettings.Region >= REGION_COUNT)
 		GCSettings.Region = REGION_AUTO;
+	if(GCSettings.cpuOverclock < CPU_OVERCLOCK_NONE || GCSettings.cpuOverclock >= CPU_OVERCLOCK_COUNT)
+		GCSettings.cpuOverclock = CPU_OVERCLOCK_NONE;
 	if(GCSettings.AutoCrop < AUTOCROP_OFF || GCSettings.AutoCrop >= AUTOCROP_MODES)
 		GCSettings.AutoCrop = AUTOCROP_OFF;
 	if(GCSettings.AutoCropScale < AUTOCROP_SCALE_SMOOTH || GCSettings.AutoCropScale >= AUTOCROP_SCALINGS)
