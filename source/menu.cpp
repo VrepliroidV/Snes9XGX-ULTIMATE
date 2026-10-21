@@ -2567,6 +2567,21 @@ static int MenuGameCheats()
 	{
 		usleep(THREAD_SLEEP);
 
+		// d-pad: down from the last line to Go Back, up from Go Back to the list
+		if(optionBrowser.LeaveDownRequested() && optionBrowser.IsFocused())
+		{
+			HaltGui();
+			mainWindow->ChangeFocus(&w);
+			w.LeaveUpRequested(); // forget an older Up
+			ResumeGui();
+		}
+		else if(w.LeaveUpRequested() && w.IsFocused())
+		{
+			HaltGui();
+			mainWindow->ChangeFocus(&optionBrowser);
+			ResumeGui();
+		}
+
 		ret = optionBrowser.GetClickedOption();
 
 		if(ret == addLine)
