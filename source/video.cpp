@@ -31,6 +31,10 @@
 
 #include "snes9x/snes9x.h"
 #include "snes9x/memmap.h"
+#include "snes9x/gfx.h"
+#include "snes9x/ppu.h"
+#include "filebrowser.h"
+#include "utils/autocrop.h"
 
 extern void UpdatePlaybackRate(void);
 
@@ -100,6 +104,14 @@ static s16 square[] ATTRIBUTE_ALIGN (32) =
 	 HASPECT, -VASPECT, 0,	// 2
 	-HASPECT, -VASPECT, 0	// 3
 };
+
+/*** Auto crop of black borders ***/
+static autocrop_state autoCrop;
+static int autoCropMode = AUTOCROP_OFF; // mode the current crop belongs to
+static bool autoCropDirty = false;      // the quad must be updated
+static u8 autoCropRows[MAX_SNES_HEIGHT];
+static int quadX = HASPECT, quadY = VASPECT; // half size of the whole frame on screen
+static f32 texS0 = 0.0f, texS1 = 1.0f, texT0 = 0.0f, texT1 = 1.0f; // visible part of the texture
 
 static camera cam = {
 	{0.0F, 0.0F, 0.0F},
@@ -352,10 +364,10 @@ draw_square (Mtx v)
 
 	GX_LoadPosMtxImm (mv, GX_PNMTX0);
 	GX_Begin (GX_QUADS, GX_VTXFMT0, 4);
-	draw_vert (0, 0, 0.0, 0.0);
-	draw_vert (1, 0, 1.0, 0.0);
-	draw_vert (2, 0, 1.0, 1.0);
-	draw_vert (3, 0, 0.0, 1.0);
+	draw_vert (0, 0, texS0, texT0);
+	draw_vert (1, 0, texS1, texT0);
+	draw_vert (2, 0, texS1, texT1);
+	draw_vert (3, 0, texS0, texT1);
 	GX_End ();
 }
 
@@ -727,6 +739,132 @@ MakeTexture (const void *src, void *dst, s32 width, s32 height)
 }
 
 /****************************************************************************
+ * Auto crop
+ *
+ * Same rules as the Auto Crop Black Borders option of the snes9x-ntsc-lie-pal
+ * Libretro core, see utils/autocrop.h. The crop is drawn by showing part of
+ * the texture on the quad: Stretch keeps the quad, Fit resizes it evenly.
+ ***************************************************************************/
+static int AutoCropLines()
+{
+	return vheight > SNES_HEIGHT_EXTENDED ? vheight / 2 : vheight;
+}
+
+static void AutoCropView(f32 *u0, f32 *u1, f32 *v0, f32 *v1, f32 *xsize, f32 *ysize)
+{
+	f32 xroom = 1.0f, yroom = 1.0f;
+	if (vmode && quadX > 0 && quadY > 0)
+	{
+		xroom = (f32) vmode->fbWidth / (2 * quadX);
+		yroom = (f32) vmode->efbHeight / (2 * quadY);
+	}
+	autocrop_view(&autoCrop, autoCropMode, vwidth, AutoCropLines(), xroom, yroom, u0, u1, v0, v1, xsize, ysize);
+}
+
+// Sets the quad and texture coordinates for the whole frame (quadX x quadY)
+// or its auto crop.
+static void UpdateQuad()
+{
+	f32 u0, u1, v0, v1, xsize, ysize;
+	AutoCropView(&u0, &u1, &v0, &v1, &xsize, &ysize);
+
+	const int x = (int) (quadX * xsize + 0.5f);
+	const int y = (int) (quadY * ysize + 0.5f);
+	square[6] = square[3]  =  x + GCSettings.xshift;
+	square[0] = square[9]  = -x + GCSettings.xshift;
+	square[4] = square[1]  =  y - GCSettings.yshift;
+	square[7] = square[10] = -y - GCSettings.yshift;
+	DCFlushRange (square, 32); // update memory BEFORE the GPU accesses it!
+	GX_InvVtxCache ();
+
+	texS0 = u0;
+	texS1 = u1;
+	texT0 = v0;
+	texT1 = v1;
+	autoCropDirty = false;
+}
+
+// Measures the frame in GFX.Screen. Returns true when the crop changed.
+static bool AutoCropMeasure()
+{
+	const int vscale = vheight > SNES_HEIGHT_EXTENDED ? 2 : 1;
+	for (int row = 0; row < vheight && row < MAX_SNES_HEIGHT; row++)
+	{
+		const int line = row / vscale;
+		// Rows below the emulated picture count as display-off lines.
+		autoCropRows[row] = (line >= PPU.ScreenHeight || line >= SNES_HEIGHT_EXTENDED) ? 1 : GFX.LineBlank[line];
+	}
+
+	autocrop_frame frame;
+	frame.pixels = GFX.Screen;
+	frame.pitch = GFX.Pitch >> 1;
+	frame.tiled = 0;
+	frame.width = vwidth;
+	frame.height = vheight < MAX_SNES_HEIGHT ? vheight : MAX_SNES_HEIGHT;
+	frame.vscale = vscale;
+	frame.hardware_rows = autoCropRows;
+	return autocrop_process(&autoCrop, &frame) != 0;
+}
+
+// The learned layouts are kept next to the game's SRAM, as <game>.autocrop.
+static bool AutoCropPath(char *path)
+{
+	if (SNESROMSize == 0 || !MakeFilePath(path, FILE_SRAM, Memory.ROMFilename, -1))
+		return false;
+	char *ext = strrchr(path, '.');
+	if (!ext || (ext - path) + sizeof(".autocrop") > MAXPATHLEN)
+		return false;
+	strcpy(ext, ".autocrop");
+	return true;
+}
+
+void AutoCropLoadGame()
+{
+	char path[MAXPATHLEN];
+	autocrop_reset(&autoCrop);
+	autoCropMode = GCSettings.AutoCrop;
+	autoCropDirty = true;
+	if (AutoCropPath(path))
+		autocrop_load_layouts(&autoCrop, path);
+}
+
+void AutoCropSaveGame()
+{
+	char path[MAXPATHLEN];
+	if (autoCrop.layouts_changed && AutoCropPath(path))
+		autocrop_save_layouts(&autoCrop, path);
+}
+
+void AutoCropReset()
+{
+	autocrop_reset_tracking(&autoCrop);
+	autoCropDirty = true;
+}
+
+void AutoCropMapPointer(float fx, float fy, int *x, int *y)
+{
+	f32 u0, u1, v0, v1, xsize, ysize;
+	AutoCropView(&u0, &u1, &v0, &v1, &xsize, &ysize);
+	if (!vmode || (u0 == 0.0f && u1 == 1.0f && v0 == 0.0f && v1 == 1.0f))
+	{
+		// Nothing cropped: the whole screen is the SNES picture, as before.
+		*x = (int) (fx * 256);
+		*y = (int) (fy * 224);
+		return;
+	}
+
+	// Screen position on the quad as drawn, then in the visible texture.
+	const f32 ex = (fx - 0.5f) * vmode->fbWidth;
+	const f32 ey = (0.5f - fy) * vmode->efbHeight;
+	const f32 left = square[0], top = square[1];
+	const f32 width = square[3] - square[0], height = square[1] - square[7];
+	const f32 qx = width > 0 ? (ex - left) / width : fx;
+	const f32 qy = height > 0 ? (top - ey) / height : fy;
+	*x = (int) ((u0 + qx * (u1 - u0)) * 256);
+	*y = (int) ((v0 + qy * (v1 - v0)) * AutoCropLines());
+}
+
+/****************************************************************************
  * Update Video
  ***************************************************************************/
 uint32 prevRenderedFrameCount = 0;
@@ -799,11 +937,9 @@ update_video (int width, int height)
 		xscale *= GCSettings.zoomHor;
 		yscale *= GCSettings.zoomVert;
 
-		square[6] = square[3]  =  xscale + GCSettings.xshift;
-		square[0] = square[9]  = -xscale + GCSettings.xshift;
-		square[4] = square[1]  =  yscale - GCSettings.yshift;
-		square[7] = square[10] = -yscale - GCSettings.yshift;
-		DCFlushRange (square, 32); // update memory BEFORE the GPU accesses it!
+		quadX = xscale;
+		quadY = yscale;
+		UpdateQuad(); // the whole frame, or its auto crop
     	draw_init ();
 
 		// initialize the texture obj we are going to use
@@ -818,6 +954,17 @@ update_video (int width, int height)
 		oldvheight = vheight;
 		CheckVideo = 0;
 	}
+
+	if (GCSettings.AutoCrop != autoCropMode)
+	{
+		autoCropMode = GCSettings.AutoCrop;
+		autocrop_reset_tracking(&autoCrop);
+		autoCropDirty = true;
+	}
+	if (autoCropMode != AUTOCROP_OFF && AutoCropMeasure())
+		autoCropDirty = true;
+	if (autoCropDirty)
+		UpdateQuad();
 #ifdef HW_RVL
 	// convert image to texture
 	if (GCSettings.VideoFilter != FILTER_NONE && vheight <= 239 && vwidth <= 256) // don't do filtering on game textures > 256 x 239

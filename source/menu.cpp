@@ -1700,6 +1700,7 @@ static int MenuGame()
 			if (WindowPrompt("Reset Game", "Are you sure that you want to reset this game? Any unsaved progress will be lost.", "OK", "Cancel"))
 			{
 				S9xSoftReset ();
+				AutoCropReset();
 				menu = MENU_EXIT;
 			}
 		}
@@ -3667,6 +3668,7 @@ static int MenuSettingsVideo()
 	sprintf(options.name[i++], "Frame Skipping");
 	sprintf(options.name[i++], "Show Frame Rate");
 	sprintf(options.name[i++], "Show Crosshair");
+	sprintf(options.name[i++], "Auto Crop");
 	options.length = i;
 
 #ifdef HW_DOL
@@ -3775,6 +3777,10 @@ static int MenuSettingsVideo()
 			case 10:
 				GCSettings.crosshair ^= 1;
 				break;
+
+			case 11:
+				GCSettings.AutoCrop = (GCSettings.AutoCrop + 1) % AUTOCROP_MODES;
+				break;
 		}
 
 		if(ret >= 0 || firstRun)
@@ -3818,6 +3824,13 @@ static int MenuSettingsVideo()
 			sprintf (options.value[8], "%s", GCSettings.FrameSkip == 1 ? "On" : "Off");
 			sprintf (options.value[9], "%s", GCSettings.ShowFrameRate == 1 ? "On" : "Off");
 			sprintf (options.value[10], "%s", GCSettings.crosshair == 1 ? "On" : "Off");
+
+			if (GCSettings.AutoCrop == AUTOCROP_FIT)
+				sprintf (options.value[11], "Fit (keep proportions)");
+			else if (GCSettings.AutoCrop == AUTOCROP_STRETCH)
+				sprintf (options.value[11], "Stretch (fill frame)");
+			else
+				sprintf (options.value[11], "Off");
 
 			optionBrowser.TriggerUpdate();
 		}

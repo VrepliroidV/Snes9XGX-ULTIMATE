@@ -504,8 +504,8 @@ static void UpdateCursorPosition (int chan, int &pos_x, int &pos_y)
 #ifdef HW_RVL
 	if (userInput[chan].wpad->ir.valid)
 	{
-		pos_x = (userInput[chan].wpad->ir.x * 256) / 640;
-		pos_y = (userInput[chan].wpad->ir.y * 224) / 480;
+		// follows the auto crop; the whole screen otherwise
+		AutoCropMapPointer(userInput[chan].wpad->ir.x / 640.0f, userInput[chan].wpad->ir.y / 480.0f, &pos_x, &pos_y);
 	}
 	else
 	{

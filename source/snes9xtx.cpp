@@ -101,6 +101,8 @@ void ExitApp()
 	if (SNESROMSize > 0 && !ConfigRequested && GCSettings.AutoSave == 1)
 		SaveSRAMAuto(SILENT);
 
+	AutoCropSaveGame();
+
 	ExitCleanup();
 
 	if(ShutdownRequested) {
@@ -587,11 +589,13 @@ int main(int argc, char *argv[])
 			if (ResetRequested)
 			{
 				S9xSoftReset(); // reset game
+				AutoCropReset();
 				ResetRequested = 0;
 			}
 			if (ConfigRequested)
 			{
 				ConfigRequested = 0;
+				AutoCropSaveGame(); // layouts learned while playing
 				ResetVideo_Menu();
 				break;
 			}

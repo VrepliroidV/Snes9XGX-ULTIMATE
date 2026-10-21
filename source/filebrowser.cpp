@@ -535,6 +535,8 @@ int BrowserLoadFile()
 		else if (GCSettings.AutoLoad == 2)
 			LoadSnapshotAuto(SILENT);
 
+		AutoCropLoadGame(); // black-border layouts learned for this game
+
 		ResetBrowser();
 		loaded = 1;
 	}

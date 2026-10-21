@@ -19,6 +19,7 @@
 #include "snes9x.h"
 #include "filter.h"
 #include "filelist.h"
+#include "utils/autocrop.h"
 
 #define APPNAME 			"Snes9x TX"
 #define APPVERSION 			"1.1.3"
@@ -137,6 +138,7 @@ struct SGCSettings{
 	int		FrameSkip;
 	int		ShowFrameRate;
 	int		crosshair;
+	int		AutoCrop;	// AUTOCROP_OFF, AUTOCROP_FIT, AUTOCROP_STRETCH (utils/autocrop.h)
 	int		aspect;
 	int		xshift;		// Video output shift
 	int		yshift;

@@ -150,6 +150,7 @@ preparePrefsData ()
 	createXMLSetting("FrameSkip", "Frame Skipping", toStr(GCSettings.FrameSkip));
 	createXMLSetting("ShowFrameRate", "Show Frame Rate", toStr(GCSettings.ShowFrameRate));
 	createXMLSetting("crosshair", "Show Crosshair", toStr(GCSettings.crosshair));
+	createXMLSetting("AutoCrop", "Auto Crop Black Borders", toStr(GCSettings.AutoCrop));
 	createXMLSetting("xshift", "Horizontal Video Shift", toStr(GCSettings.xshift));
 	createXMLSetting("yshift", "Vertical Video Shift", toStr(GCSettings.yshift));
 
@@ -344,6 +345,7 @@ decodePrefsData ()
 			loadXMLSetting(&GCSettings.FrameSkip, "FrameSkip");
 			loadXMLSetting(&GCSettings.ShowFrameRate, "ShowFrameRate");
 			loadXMLSetting(&GCSettings.crosshair, "crosshair");
+			loadXMLSetting(&GCSettings.AutoCrop, "AutoCrop");
 			loadXMLSetting(&GCSettings.xshift, "xshift");
 			loadXMLSetting(&GCSettings.yshift, "yshift");
 
@@ -422,6 +424,8 @@ void FixInvalidSettings()
 		GCSettings.MusicVolume = 80;
 	if(GCSettings.Region < REGION_AUTO || GCSettings.Region >= REGION_COUNT)
 		GCSettings.Region = REGION_AUTO;
+	if(GCSettings.AutoCrop < AUTOCROP_OFF || GCSettings.AutoCrop >= AUTOCROP_MODES)
+		GCSettings.AutoCrop = AUTOCROP_OFF;
 	if(!(GCSettings.SFXVolume >= 0 && GCSettings.SFXVolume <= 100))
 		GCSettings.SFXVolume = 20;
 	if(GCSettings.language < 0 || GCSettings.language >= LANG_LENGTH)
@@ -455,6 +459,7 @@ DefaultSettings ()
 	GCSettings.bilinear = 0; // Disabled by default
 	GCSettings.VideoFilter = FILTER_NONE; // No video filter
 	GCSettings.crosshair = 1; // Enabled by default
+	GCSettings.AutoCrop = AUTOCROP_OFF; // Disabled by default
 
 	GCSettings.aspect = 0;
 
