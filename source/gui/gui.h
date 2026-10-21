@@ -841,8 +841,13 @@ class GuiKeyboard : public GuiWindow
 		GuiKeyboard(char * t, u32 m);
 		~GuiKeyboard();
 		void Update(GuiTrigger * t);
+		//! Called after every change of the text, to keep it in a format
+		//! (for example inserting separators); NULL for none.
+		void SetTextFilter(void (*f)(char * text, int size));
 		char kbtextstr[256];
 	protected:
+		void TextChanged();
+		void (*textFilter)(char * text, int size);
 		u32 kbtextmaxlen;
 		int shift;
 		int caps;

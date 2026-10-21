@@ -37,6 +37,7 @@
 #include "gui/gui.h"
 #include "menu.h"
 #include "utils/gettext.h"
+#include <ctype.h>
 #include "utils/FreeTypeGX.h"
 
 #include "snes9x/snes9x.h"
@@ -653,11 +654,13 @@ void AutoSave()
  * Opens an on-screen keyboard window, with the data entered being stored
  * into the specified variable.
  ***************************************************************************/
-static void OnScreenKeyboard(char * var, u32 maxlen)
+static void OnScreenKeyboard(char * var, u32 maxlen, void (*filter)(char * text, int size) = NULL)
 {
 	int save = -1;
 
 	GuiKeyboard keyboard(var, maxlen);
+	if(filter)
+		keyboard.SetTextFilter(filter);
 
 	GuiSound btnSoundOver(button_over_pcm, button_over_pcm_size, SOUND_PCM);
 	GuiSound btnSoundClick(button_click_pcm, button_click_pcm_size, SOUND_PCM);
@@ -2367,11 +2370,53 @@ static int MenuGameSettings()
 }
 
 /****************************************************************************
+ * Cheat code typing
+ *
+ * Only hex digits are kept and the separators are put in by themselves:
+ * XXXX-XXXX for Game Genie, XXXXXX:XX for Pro Action Replay, several codes
+ * joined with +. A separator only appears once the digit after it is typed,
+ * so erasing never gets stuck on one.
+ ***************************************************************************/
+static void FormatCheatText(char * text, int size, int sepPos, char sep)
+{
+	char out[256];
+	int o = 0, n = 0;
+
+	for(const char * p = text; *p; p++)
+	{
+		if(!isxdigit((unsigned char) *p))
+			continue;
+		if(o + 3 > size || o + 3 > (int) sizeof(out))
+			break;
+		const int pos = n % 8;
+		if(n > 0 && pos == 0)
+			out[o++] = '+';
+		else if(pos == sepPos)
+			out[o++] = sep;
+		out[o++] = toupper((unsigned char) *p);
+		n++;
+	}
+	out[o] = 0;
+	strcpy(text, out);
+}
+
+static void FormatGameGenie(char * text, int size)
+{
+	FormatCheatText(text, size, 4, '-');
+}
+
+static void FormatActionReplay(char * text, int size)
+{
+	FormatCheatText(text, size, 6, ':');
+}
+
+/****************************************************************************
  * MenuGameCheats
  *
  * Displays a list of cheats available, and allows the user to enable/disable
- * them, type new codes (Game Genie, Pro Action Replay or raw) and delete
- * codes. Changes are saved to the game's cheat file right away.
+ * them, type new codes (Game Genie or Pro Action Replay) and delete codes.
+ * Adding and deleting are the first lines of the list, so every controller
+ * can reach them. Changes are saved to the game's cheat file right away.
  ***************************************************************************/
 static bool cheatDeleteMode = false;
 
@@ -2381,32 +2426,79 @@ static void SaveCheatsOrWarn()
 		ErrorPrompt("Could not save the cheat file!");
 }
 
+static void AddCheatPrompt()
+{
+	if(CheatCount() >= MAX_OPTIONS - 2)
+	{
+		InfoPrompt("Too many codes! Delete one first.");
+		return;
+	}
+
+	const bool genie = WindowPrompt("Add Code", "Game Genie or Action Replay?", "Game Genie", "Action Replay") == 1;
+
+	char code[200] = "";
+	OnScreenKeyboard(code, sizeof(code), genie ? FormatGameGenie : FormatActionReplay);
+	if(code[0] == 0)
+		return; // cancelled or nothing typed
+
+	char bad[64];
+	if(AddCheatCode(code, bad, sizeof(bad)) >= 0)
+	{
+		SaveCheatsOrWarn();
+		return;
+	}
+
+	char msg[300];
+	snprintf(msg, sizeof(msg), "%s - %s", bad[0] ? bad : code,
+		gettext(genie ? "not a valid code. A Game Genie code has 8 letters and numbers."
+		              : "not a valid code. An Action Replay code has 8 letters and numbers."));
+	WindowPrompt("Invalid code", msg, "OK", NULL);
+}
+
 static int MenuGameCheats()
 {
 	int menu = MENU_NONE;
 	int ret;
-	u16 i = 0;
+	int i = 0;
 	OptionList options;
 
-	for(i=0; i < Cheat.g.size() && i < MAX_OPTIONS; i++)
+	// first lines: actions
+	const int addLine = i;
+	sprintf(options.name[i], "Add Code");
+	options.value[i++][0] = 0;
+	int deleteLine = -1;
+	if(Cheat.g.size() > 0)
 	{
-		snprintf (options.name[i], 50, "%s", Cheat.g[i].name);
-		sprintf (options.value[i], "%s", Cheat.g[i].enabled == true ? "On" : "Off");
+		deleteLine = i;
+		sprintf(options.name[i], "Delete Code");
+		sprintf(options.value[i++], "%s", cheatDeleteMode ? gettext("Cancel") : "");
+	}
+	else
+	{
+		cheatDeleteMode = false;
+	}
+
+	const int firstCheat = i;
+	for(unsigned int c = 0; c < Cheat.g.size() && i < MAX_OPTIONS; c++, i++)
+	{
+		snprintf (options.name[i], 50, "%s", Cheat.g[c].name);
+		sprintf (options.value[i], "%s", Cheat.g[c].enabled == true ? "On" : "Off");
 	}
 
 	options.length = i;
 
 	GuiText titleTxt(cheatDeleteMode ? "Cheats - Choose a code to delete" : "Game Settings - Cheats", 26, (GXColor){255, 255, 255, 255});
 	titleTxt.SetAlignment(ALIGN_LEFT, ALIGN_TOP);
-	titleTxt.SetPosition(50,50);
+	titleTxt.SetPosition(50,44);
 
+	// inside the grey bar at the top (98 pixels)
 	GuiText hintTxt("Game Genie: XXXX-XXXX   Action Replay: XXXXXXXX", 16, (GXColor){255, 255, 255, 255});
 	hintTxt.SetAlignment(ALIGN_LEFT, ALIGN_TOP);
-	hintTxt.SetPosition(52,84);
+	hintTxt.SetPosition(52,74);
 
-	GuiText emptyTxt("No codes yet. Choose Add Code to type one.", 20, (GXColor){255, 255, 255, 255});
-	emptyTxt.SetAlignment(ALIGN_CENTRE, ALIGN_MIDDLE);
-	emptyTxt.SetPosition(0, -10);
+	GuiText emptyTxt("No codes yet.", 20, (GXColor){0, 0, 0, 255});
+	emptyTxt.SetAlignment(ALIGN_CENTRE, ALIGN_TOP);
+	emptyTxt.SetPosition(0, 220);
 
 	GuiSound btnSoundOver(button_over_pcm, button_over_pcm_size, SOUND_PCM);
 	GuiSound btnSoundClick(button_click_pcm, button_click_pcm_size, SOUND_PCM);
@@ -2435,36 +2527,6 @@ static int MenuGameCheats()
 	backBtn.SetTrigger(&trig1);
 	backBtn.SetEffectGrow();
 
-	GuiText addBtnTxt("Add Code", 22, (GXColor){0, 0, 0, 255});
-	GuiImage addBtnImg(&btnOutline);
-	GuiImage addBtnImgOver(&btnOutlineOver);
-	GuiButton addBtn(btnOutline.GetWidth(), btnOutline.GetHeight());
-	addBtn.SetAlignment(ALIGN_CENTRE, ALIGN_BOTTOM);
-	addBtn.SetPosition(0, -35);
-	addBtn.SetLabel(&addBtnTxt);
-	addBtn.SetImage(&addBtnImg);
-	addBtn.SetImageOver(&addBtnImgOver);
-	addBtn.SetSoundOver(&btnSoundOver);
-	addBtn.SetSoundClick(&btnSoundClick);
-	addBtn.SetTrigger(trigA);
-	addBtn.SetTrigger(trig2);
-	addBtn.SetEffectGrow();
-
-	GuiText deleteBtnTxt(cheatDeleteMode ? "Cancel" : "Delete Code", 22, (GXColor){0, 0, 0, 255});
-	GuiImage deleteBtnImg(&btnOutline);
-	GuiImage deleteBtnImgOver(&btnOutlineOver);
-	GuiButton deleteBtn(btnOutline.GetWidth(), btnOutline.GetHeight());
-	deleteBtn.SetAlignment(ALIGN_RIGHT, ALIGN_BOTTOM);
-	deleteBtn.SetPosition(-50, -35);
-	deleteBtn.SetLabel(&deleteBtnTxt);
-	deleteBtn.SetImage(&deleteBtnImg);
-	deleteBtn.SetImageOver(&deleteBtnImgOver);
-	deleteBtn.SetSoundOver(&btnSoundOver);
-	deleteBtn.SetSoundClick(&btnSoundClick);
-	deleteBtn.SetTrigger(trigA);
-	deleteBtn.SetTrigger(trig2);
-	deleteBtn.SetEffectGrow();
-
 	GuiOptionBrowser optionBrowser(552, 248, &options);
 	optionBrowser.SetPosition(0, 108);
 	optionBrowser.SetAlignment(ALIGN_CENTRE, ALIGN_TOP);
@@ -2472,14 +2534,11 @@ static int MenuGameCheats()
 	HaltGui();
 	GuiWindow w(screenwidth, screenheight);
 	w.Append(&backBtn);
-	w.Append(&addBtn);
-	if(options.length > 0)
-		w.Append(&deleteBtn);
 	mainWindow->Append(&optionBrowser);
 	mainWindow->Append(&w);
 	mainWindow->Append(&titleTxt);
 	mainWindow->Append(&hintTxt);
-	if(options.length == 0)
+	if(Cheat.g.size() == 0)
 		mainWindow->Append(&emptyTxt);
 	ResumeGui();
 
@@ -2489,65 +2548,40 @@ static int MenuGameCheats()
 
 		ret = optionBrowser.GetClickedOption();
 
-		if(ret >= 0 && cheatDeleteMode)
+		if(ret == addLine)
 		{
-			char msg[200];
-			snprintf(msg, sizeof(msg), "%s", Cheat.g[ret].name);
-			if(WindowPrompt("Delete Code", msg, "Delete", "Cancel"))
-			{
-				DeleteCheat(ret);
-				SaveCheatsOrWarn();
-			}
 			cheatDeleteMode = false;
+			AddCheatPrompt();
 			menu = MENU_GAMESETTINGS_CHEATS; // show the new list
 		}
-		else if(ret >= 0)
+		else if(ret >= 0 && ret == deleteLine)
 		{
-			ToggleCheat(ret);
-			sprintf (options.value[ret], "%s", Cheat.g[ret].enabled == true ? "On" : "Off");
-			optionBrowser.TriggerUpdate();
-			SaveCheatsOrWarn();
+			cheatDeleteMode = !cheatDeleteMode;
+			menu = MENU_GAMESETTINGS_CHEATS; // change the title
 		}
-
-		if(addBtn.GetState() == STATE_CLICKED)
+		else if(ret >= firstCheat && ret < options.length && (unsigned int) (ret - firstCheat) < Cheat.g.size())
 		{
-			addBtn.ResetState();
-			cheatDeleteMode = false;
+			const int c = ret - firstCheat;
 
-			if(CheatCount() >= MAX_OPTIONS)
+			if(cheatDeleteMode)
 			{
-				InfoPrompt("Too many codes! Delete one first.");
+				char msg[200];
+				snprintf(msg, sizeof(msg), "%s", Cheat.g[c].name);
+				if(WindowPrompt("Delete Code", msg, "Delete", "Cancel"))
+				{
+					DeleteCheat(c);
+					SaveCheatsOrWarn();
+				}
+				cheatDeleteMode = false;
+				menu = MENU_GAMESETTINGS_CHEATS; // show the new list
 			}
 			else
 			{
-				char code[200] = "";
-				OnScreenKeyboard(code, 199);
-
-				char bad[64];
-				if(code[0] == 0)
-				{
-					// cancelled or nothing typed
-				}
-				else if(AddCheatCode(code, bad, sizeof(bad)) >= 0)
-				{
-					SaveCheatsOrWarn();
-					menu = MENU_GAMESETTINGS_CHEATS; // show the new list
-				}
-				else
-				{
-					char msg[300];
-					snprintf(msg, sizeof(msg), "%s - %s", bad[0] ? bad : code,
-						gettext("not a valid code. Use Game Genie (XXXX-XXXX) or Action Replay (XXXXXXXX)."));
-					WindowPrompt("Invalid code", msg, "OK", NULL);
-				}
+				ToggleCheat(c);
+				sprintf (options.value[ret], "%s", Cheat.g[c].enabled == true ? "On" : "Off");
+				optionBrowser.TriggerUpdate();
+				SaveCheatsOrWarn();
 			}
-		}
-
-		if(deleteBtn.GetState() == STATE_CLICKED)
-		{
-			deleteBtn.ResetState();
-			cheatDeleteMode = !cheatDeleteMode;
-			menu = MENU_GAMESETTINGS_CHEATS; // change the title and button
 		}
 
 		if(backBtn.GetState() == STATE_CLICKED)

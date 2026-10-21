@@ -715,8 +715,8 @@ msgstr "Apagar Código"
 msgid "Cheats - Choose a code to delete"
 msgstr "Trapaças - Escolha o código para apagar"
 
-msgid "No codes yet. Choose Add Code to type one."
-msgstr "Nenhum código ainda. Escolha Adicionar Código para digitar um."
+msgid "No codes yet."
+msgstr "Nenhum código ainda."
 
 msgid "Could not save the cheat file!"
 msgstr "Não foi possível salvar o arquivo de trapaças!"
@@ -727,8 +727,14 @@ msgstr "Códigos demais! Apague um primeiro."
 msgid "Invalid code"
 msgstr "Código inválido"
 
-msgid "not a valid code. Use Game Genie (XXXX-XXXX) or Action Replay (XXXXXXXX)."
-msgstr "não é um código válido. Use Game Genie (XXXX-XXXX) ou Action Replay (XXXXXXXX)."
+msgid "not a valid code. A Game Genie code has 8 letters and numbers."
+msgstr "não é um código válido. Um código de Game Genie tem 8 letras e números."
+
+msgid "not a valid code. An Action Replay code has 8 letters and numbers."
+msgstr "não é um código válido. Um código de Action Replay tem 8 letras e números."
+
+msgid "Game Genie or Action Replay?"
+msgstr "Game Genie ou Action Replay?"
 
 msgid "Auto Crop Scaling"
 msgstr "Escala do Auto Crop"
