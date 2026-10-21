@@ -7,6 +7,21 @@ Snes9x TX is a fork of Snes9x GX: https://github.com/dborth/snes9xgx
 Update History
 --------------
 
+---Snes9x TX 1.1.3-usb.2 (VrepliroidV)---
+---October 21 2026---
+
+- Auto Crop of black borders (Video > Auto Crop: Off / Fit / Stretch), with
+  the rules of the snes9x-ntsc-lie-pal Libretro core; layouts are remembered
+  per game in <game>.autocrop next to the saves
+- Auto Crop Scaling: Smooth (sharp scaling when bilinear filtering is off)
+  or Integer (whole-number scaling only)
+- Cheats: Add Code types Game Genie or Action Replay codes (the - : and +
+  are added by themselves), Delete Code removes one; saved to the game's
+  cheat file with their on/off state, and codes saved as on work again when
+  the game loads. Works with every controller
+- Removed the L + R + Start and L + R + Plus menu combos
+- pt-BR and pt translations for the new texts
+
 ---Snes9x TX 1.1.3-usb.1 (VrepliroidV)---
 ---October 18 2026---
 

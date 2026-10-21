@@ -1,29 +1,39 @@
-Versão modificada do [Snes9x TX 1.1.3](https://github.com/saulfabregwiivc/Snes9xTX) (Tanooki) para Wii, com suporte a controles USB sem fio. *English below.*
+Versão modificada do [Snes9x TX 1.1.3](https://github.com/saulfabregwiivc/Snes9xTX) (Tanooki) para Wii, com suporte a controles USB sem fio, Auto Crop e cheats digitados no menu. *English below.*
 
-## O que tem de novo
+## Novidades desta versão
 
-**Controles USB do tipo Xbox 360 (XInput)**, com fio ou com receptor 2.4 GHz plugado direto no USB do Wii.
-- Testado com o **Retroflag Classic Controller-M wireless** (estilo Mega Drive) e com um **controle sem fio genérico de SNES Classic Mini**. Outros controles que se apresentam como controle de Xbox 360 devem funcionar também.
-- Até 4 controles ao mesmo tempo. O primeiro receptor plugado é o jogador 1, o segundo é o jogador 2.
-- Pode plugar e tirar o receptor com o emulador aberto.
-- O emulador enxerga esses controles como **controle de GameCube**. Para mudar os botões, configure o controle de GameCube.
-- **L + Select + Start** abre o menu do emulador, já que esses controles não têm botão Home.
+**Auto Crop** (Game Settings > Video > Auto Crop): corta as bordas pretas ao redor da imagem do jogo, com as mesmas regras do núcleo [snes9x-ntsc-lie-pal](https://github.com/VrepliroidV/snes9x-ntsc-lie-pal).
+- **Off**, **Fit** (amplia sem deformar os pixels) ou **Stretch** (estica até preencher o quadro).
+- Linhas desenhadas com a tela desligada são cortadas em 2 quadros. Barras de tiles pretos só são cortadas quando a tela parece gameplay, então telas de logo e texto sobre fundo preto ficam inteiras.
+- Enquadramentos que ficam 5 segundos na tela são memorizados para o jogo, no arquivo `<jogo>.autocrop` junto dos saves. Apague o arquivo para o jogo aprender de novo.
+- Gráficos que aparecem na área cortada voltam a aparecer no mesmo quadro. A mira da Super Scope e o mouse acompanham o corte.
+- **Auto Crop Scaling**: **Suave** preenche a tela e fica nítido mesmo com o filtro bilinear desligado. **Inteira** amplia só em número inteiro, sem nenhuma linha misturada; em 240p, num jogo com faixas em cima e embaixo, a altura fica como está.
 
-**Região**
-- A região escolhida nas opções agora vale para todo jogo carregado. Antes ela só era aplicada a partir da segunda vez que se abria um jogo.
-- Nova opção **NTSC (Lie to PAL)**: o jogo roda com a temporização NTSC (60 Hz), mas acredita que está num console PAL. Serve para jogos PAL que travam, mostram aviso ou ficam com a tela preta quando percebem a troca de região.
+**Cheats digitados no menu** (Game Settings > Cheats), sem precisar copiar arquivo para o SD:
+- **Adicionar Código**: escolha Game Genie ou Action Replay e digite só as letras e os números. O `-`, o `:` e o `+` entre vários códigos entram sozinhos.
+- Clique num código para ligar ou desligar. **Apagar Código** remove um.
+- Tudo é salvo no arquivo de cheats do jogo (`snes9xtx/cheats/<jogo>.cht`), com o estado ligado ou desligado. Os códigos ligados voltam a funcionar quando o jogo abre.
+- Funciona com qualquer controle, inclusive os controles USB.
 
-**Correções**
-- Música do menu: o emulador procura o `bg_music.ogg` na pasta do app (`apps/snes9xtx`), em `sd:/snes9xtx` e em `usb:/snes9xtx`.
-- O suporte a controle de PS3 (DualShock 3) mandava comandos inválidos para o sistema do Wii quando havia outro aparelho USB do tipo HID plugado. Com alguns receptores, isso dava erro de exceção ao abrir o emulador.
+**Atalhos do menu**
+- Os atalhos L + R + Start (controle de GameCube) e L + R + Plus (Classic Controller) foram retirados: eles atrapalhavam em jogos e cheats.
+- Agora o menu abre com **L + Select + Start** nos controles USB, **Home** no Wiimote e no Classic Controller, e o **direcional C para a esquerda** no controle de GameCube.
+
+Textos novos traduzidos para português.
+
+## O que já vinha na versão anterior
+
+- **Controles USB do tipo Xbox 360 (XInput)**, com fio ou com receptor 2.4 GHz plugado direto no USB do Wii. Testado com o **Retroflag Classic Controller-M wireless** (estilo Mega Drive) e com um **controle sem fio genérico de SNES Classic Mini**. Até 4 controles; o primeiro receptor plugado é o jogador 1. Pode plugar e tirar com o emulador aberto. O emulador vê esses controles como **controle de GameCube**.
+- **Região** aplicada em todo jogo carregado, e a opção **NTSC (Lie to PAL)**: temporização NTSC (60 Hz), mas o jogo acredita que está num console PAL.
+- Música do menu: `bg_music.ogg` na pasta do app, em `sd:/snes9xtx` ou em `usb:/snes9xtx`.
+- Correção do erro de exceção ao abrir o emulador com alguns receptores USB plugados junto com outro aparelho USB.
 
 ## Instalação
 
-1. Baixe o `Snes9xTX-Wii.zip` e extraia na raiz do cartão SD ou do pendrive. Ele cria as pastas `apps/snes9xtx` (o emulador) e `snes9xtx` (com `roms`, `saves` e `cheats`).
+1. Baixe o `Snes9xTX-Wii.zip` e extraia na raiz do cartão SD ou do pendrive. Ele cria `apps/snes9xtx` (o emulador) e a pasta `snes9xtx` com `roms`, `saves` e `cheats`.
 2. Se você já tem o Snes9x TX instalado, basta trocar o `boot.dol` da pasta `apps/snes9xtx`. Suas configurações e saves continuam.
-3. Música do menu (opcional): coloque um arquivo `bg_music.ogg` na pasta `apps/snes9xtx`.
 
-O `Snes9xTX-GameCube.zip` traz a versão de GameCube. Ela tem as melhorias de região, mas não os controles USB, porque o GameCube não tem USB.
+O `Snes9xTX-GameCube.zip` traz a versão de GameCube: tem o Auto Crop, os cheats e as melhorias de região, mas não os controles USB.
 
 ## Observações
 
@@ -34,14 +44,14 @@ O `Snes9xTX-GameCube.zip` traz a versão de GameCube. Ela tem as melhorias de re
 
 ## English
 
-Snes9x TX 1.1.3 for Wii with support for **Xbox 360 (XInput) USB controllers**, wired or through a 2.4 GHz receiver plugged straight into the Wii.
+Snes9x TX 1.1.3 for Wii with Xbox 360 (XInput) USB controllers, Auto Crop and cheats typed in the menu.
 
-- Tested with the Retroflag Classic Controller-M wireless and a generic SNES Classic Mini wireless pad. Up to 4 at once; the first receiver plugged in is player 1. Hot-plug works.
-- They show up as **GameCube controllers**, so remap them through the GameCube controller settings.
-- **L + Select + Start** opens the menu.
-- The region option now applies to every game loaded, and there is a new **NTSC (Lie to PAL)** region: NTSC timing, but the game sees a PAL console.
-- Menu music is read from `bg_music.ogg` in `apps/snes9xtx`, `sd:/snes9xtx` or `usb:/snes9xtx`.
-- Fixed: the DualShock 3 support sent requests to an invalid handle whenever another USB HID device was plugged in, which crashed the emulator at start-up with some receivers.
+New in this version:
+- **Auto Crop** (Game Settings > Video): crops black borders, with the rules of the snes9x-ntsc-lie-pal Libretro core. Off, Fit (keeps the pixel shape) or Stretch (fills the frame). Layouts seen for 5 seconds are remembered per game in `<game>.autocrop` next to the saves. **Auto Crop Scaling**: Smooth fills the frame and stays sharp with bilinear filtering off; Integer only scales by whole numbers.
+- **Cheats** (Game Settings > Cheats): Add Code types Game Genie or Action Replay codes with the `-`, `:` and `+` added by themselves; click a code to turn it on or off; Delete Code removes one. Everything is saved to the game's cheat file, and codes saved as on are active when the game loads. Works with every controller.
+- The L + R + Start (GameCube) and L + R + Plus (Classic Controller) menu combos were removed. The menu opens with L + Select + Start on USB pads, Home on Wii controllers and C stick left on GameCube controllers.
+
+Already in the previous version: USB controllers read as GameCube controllers (tested with the Retroflag Classic Controller-M wireless and a generic SNES Classic Mini wireless pad, up to 4, hot-plug), the region option applied on every game load, the NTSC (Lie to PAL) region, menu music from `bg_music.ogg`, and a fix for a start-up crash with some USB receivers.
 
 Install: extract `Snes9xTX-Wii.zip` to the root of the SD card or USB drive, or replace `apps/snes9xtx/boot.dol` in an existing install.
 
