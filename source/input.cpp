@@ -776,9 +776,10 @@ static void decodepad (int chan, int emuChan)
 #endif
 }
 
-// The GameCube L + R + Start combo was removed: it is a common button
-// combination in games and cheat menus. GameCube controllers open the menu
-// with the C stick (left), USB pads with L + Select + Start.
+// The L + R + Start (GameCube) and L + R + Plus (Classic Controller) combos
+// were removed: they are common button combinations in games and cheat menus.
+// GameCube controllers open the menu with the C stick (left), Wii controllers
+// with Home, USB pads with L + Select + Start.
 bool MenuRequested()
 {
 	for(int i=0; i<4; i++)
@@ -789,9 +790,6 @@ bool MenuRequested()
 			|| (userInput[i].wpad->btns_h & WPAD_BUTTON_HOME) ||
 			(userInput[i].wpad->btns_h & WPAD_CLASSIC_BUTTON_HOME) ||
 			(userInput[i].wiidrcdata.btns_h & WIIDRC_BUTTON_HOME) ||
-			(userInput[i].wpad->btns_h & WPAD_CLASSIC_BUTTON_FULL_L &&
-			userInput[i].wpad->btns_h & WPAD_CLASSIC_BUTTON_FULL_R &&
-			userInput[i].wpad->btns_h & WPAD_CLASSIC_BUTTON_PLUS) ||
 			UsbPadMenuCombo(i)
 			#endif
 		)
