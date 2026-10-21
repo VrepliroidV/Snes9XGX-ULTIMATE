@@ -654,13 +654,20 @@ void AutoSave()
  * Opens an on-screen keyboard window, with the data entered being stored
  * into the specified variable.
  ***************************************************************************/
-static void OnScreenKeyboard(char * var, u32 maxlen, void (*filter)(char * text, int size) = NULL)
+static void OnScreenKeyboard(char * var, u32 maxlen, void (*filter)(char * text, int size) = NULL, const char * title = NULL)
 {
 	int save = -1;
 
 	GuiKeyboard keyboard(var, maxlen);
 	if(filter)
 		keyboard.SetTextFilter(filter);
+
+	// what to type, above the keyboard (in the grey bar at the top)
+	GuiText titleTxt(title, 22, (GXColor){255, 255, 255, 255});
+	titleTxt.SetAlignment(ALIGN_CENTRE, ALIGN_TOP);
+	titleTxt.SetPosition(0, -32);
+	if(title)
+		keyboard.Append(&titleTxt);
 
 	GuiSound btnSoundOver(button_over_pcm, button_over_pcm_size, SOUND_PCM);
 	GuiSound btnSoundClick(button_click_pcm, button_click_pcm_size, SOUND_PCM);
@@ -2418,7 +2425,9 @@ static void FormatActionReplay(char * text, int size)
  * Adding and deleting are the first lines of the list, so every controller
  * can reach them. Changes are saved to the game's cheat file right away.
  ***************************************************************************/
-static bool cheatDeleteMode = false;
+// Rename Code and Delete Code: the next code picked in the list
+enum { CHEAT_PICK_NONE, CHEAT_PICK_RENAME, CHEAT_PICK_DELETE };
+static int cheatPickMode = CHEAT_PICK_NONE;
 
 static void SaveCheatsOrWarn()
 {
@@ -2437,13 +2446,20 @@ static void AddCheatPrompt()
 	const bool genie = WindowPrompt("Add Code", "Game Genie or Action Replay?", "Game Genie", "Action Replay") == 1;
 
 	char code[200] = "";
-	OnScreenKeyboard(code, sizeof(code), genie ? FormatGameGenie : FormatActionReplay);
+	OnScreenKeyboard(code, sizeof(code), genie ? FormatGameGenie : FormatActionReplay,
+		genie ? "Game Genie code" : "Action Replay code");
 	if(code[0] == 0)
 		return; // cancelled or nothing typed
 
 	char bad[64];
-	if(AddCheatCode(code, bad, sizeof(bad)) >= 0)
+	const int index = AddCheatCode(code, bad, sizeof(bad));
+	if(index >= 0)
 	{
+		// what the code does; without a name the code itself is shown
+		char name[41] = "";
+		OnScreenKeyboard(name, sizeof(name), NULL, "Name of the code (optional)");
+		if(name[0])
+			RenameCheat(index, name);
 		SaveCheatsOrWarn();
 		return;
 	}
@@ -2466,16 +2482,19 @@ static int MenuGameCheats()
 	const int addLine = i;
 	sprintf(options.name[i], "Add Code");
 	options.value[i++][0] = 0;
-	int deleteLine = -1;
+	int renameLine = -1, deleteLine = -1;
 	if(Cheat.g.size() > 0)
 	{
+		renameLine = i;
+		sprintf(options.name[i], "Rename Code");
+		sprintf(options.value[i++], "%s", cheatPickMode == CHEAT_PICK_RENAME ? gettext("Cancel") : "");
 		deleteLine = i;
 		sprintf(options.name[i], "Delete Code");
-		sprintf(options.value[i++], "%s", cheatDeleteMode ? gettext("Cancel") : "");
+		sprintf(options.value[i++], "%s", cheatPickMode == CHEAT_PICK_DELETE ? gettext("Cancel") : "");
 	}
 	else
 	{
-		cheatDeleteMode = false;
+		cheatPickMode = CHEAT_PICK_NONE;
 	}
 
 	const int firstCheat = i;
@@ -2487,7 +2506,9 @@ static int MenuGameCheats()
 
 	options.length = i;
 
-	GuiText titleTxt(cheatDeleteMode ? "Cheats - Choose a code to delete" : "Game Settings - Cheats", 26, (GXColor){255, 255, 255, 255});
+	GuiText titleTxt(cheatPickMode == CHEAT_PICK_DELETE ? "Cheats - Choose a code to delete" :
+		cheatPickMode == CHEAT_PICK_RENAME ? "Cheats - Choose a code to rename" : "Game Settings - Cheats",
+		26, (GXColor){255, 255, 255, 255});
 	titleTxt.SetAlignment(ALIGN_LEFT, ALIGN_TOP);
 	titleTxt.SetPosition(50,44);
 
@@ -2550,20 +2571,25 @@ static int MenuGameCheats()
 
 		if(ret == addLine)
 		{
-			cheatDeleteMode = false;
+			cheatPickMode = CHEAT_PICK_NONE;
 			AddCheatPrompt();
 			menu = MENU_GAMESETTINGS_CHEATS; // show the new list
 		}
+		else if(ret >= 0 && ret == renameLine)
+		{
+			cheatPickMode = cheatPickMode == CHEAT_PICK_RENAME ? CHEAT_PICK_NONE : CHEAT_PICK_RENAME;
+			menu = MENU_GAMESETTINGS_CHEATS; // change the title
+		}
 		else if(ret >= 0 && ret == deleteLine)
 		{
-			cheatDeleteMode = !cheatDeleteMode;
+			cheatPickMode = cheatPickMode == CHEAT_PICK_DELETE ? CHEAT_PICK_NONE : CHEAT_PICK_DELETE;
 			menu = MENU_GAMESETTINGS_CHEATS; // change the title
 		}
 		else if(ret >= firstCheat && ret < options.length && (unsigned int) (ret - firstCheat) < Cheat.g.size())
 		{
 			const int c = ret - firstCheat;
 
-			if(cheatDeleteMode)
+			if(cheatPickMode == CHEAT_PICK_DELETE)
 			{
 				char msg[200];
 				snprintf(msg, sizeof(msg), "%s", Cheat.g[c].name);
@@ -2572,7 +2598,20 @@ static int MenuGameCheats()
 					DeleteCheat(c);
 					SaveCheatsOrWarn();
 				}
-				cheatDeleteMode = false;
+				cheatPickMode = CHEAT_PICK_NONE;
+				menu = MENU_GAMESETTINGS_CHEATS; // show the new list
+			}
+			else if(cheatPickMode == CHEAT_PICK_RENAME)
+			{
+				char name[41];
+				snprintf(name, sizeof(name), "%s", Cheat.g[c].name);
+				OnScreenKeyboard(name, sizeof(name), NULL, "New name of the code");
+				if(name[0] && strcmp(name, Cheat.g[c].name) != 0)
+				{
+					RenameCheat(c, name);
+					SaveCheatsOrWarn();
+				}
+				cheatPickMode = CHEAT_PICK_NONE;
 				menu = MENU_GAMESETTINGS_CHEATS; // show the new list
 			}
 			else
@@ -2586,7 +2625,7 @@ static int MenuGameCheats()
 
 		if(backBtn.GetState() == STATE_CLICKED)
 		{
-			cheatDeleteMode = false;
+			cheatPickMode = CHEAT_PICK_NONE;
 			menu = MENU_GAMESETTINGS;
 		}
 	}

@@ -94,6 +94,21 @@ void DeleteCheat(uint32 num) {
 	UpdateCheatsEnabled();
 }
 
+void RenameCheat(uint32 num, const char *name) {
+	if(num >= Cheat.g.size() || !name || !name[0])
+		return;
+
+	// the cheat file keeps names on one line, without double quotes
+	char clean[64];
+	snprintf(clean, sizeof(clean), "%s", name);
+	for(char *p = clean; *p; p++)
+		if(*p == '"' || (unsigned char)*p < ' ')
+			*p = '\'';
+
+	free(Cheat.g[num].name); // the core makes names with strdup
+	Cheat.g[num].name = strdup(clean);
+}
+
 int CheatCount() {
 	return Cheat.g.size();
 }
