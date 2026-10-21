@@ -18,6 +18,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <math.h>
 #include <ogc/texconv.h>
 #include <ogc/machine/processor.h>
 
@@ -112,6 +113,23 @@ static bool autoCropDirty = false;      // the quad must be updated
 static u8 autoCropRows[MAX_SNES_HEIGHT];
 static int quadX = HASPECT, quadY = VASPECT; // half size of the whole frame on screen
 static f32 texS0 = 0.0f, texS1 = 1.0f, texT0 = 0.0f, texT1 = 1.0f; // visible part of the texture
+
+/*** Sharp scaling of the auto crop (bilinear filtering off) ***
+ Enlarging the crop by a fraction with nearest sampling makes some pixels
+ and lines bigger than others, which shows most in 240p. Instead the visible
+ part is first enlarged by whole numbers with nearest sampling, in a corner
+ of the EFB, then copied to a texture and smoothed to its size on screen:
+ the picture stays sharp, only the rows and columns where pixels meet are
+ blended. */
+#define SHARP_MAX_WIDTH  640 // EFB size
+#define SHARP_MAX_HEIGHT 528
+static u8 sharpTex[SHARP_MAX_WIDTH * SHARP_MAX_HEIGHT * 2] ATTRIBUTE_ALIGN (32);
+static GXTexObj sharpTexObj;
+static s16 sharpSquare[12] ATTRIBUTE_ALIGN (32);
+static int sharpW = 0, sharpH = 0;       // enlarged size; 0 = draw directly
+static int sharpTexW = 0, sharpTexH = 0; // texture size, multiples of 4
+static bool sharpTexReady = false;
+extern int fscale; // texture scale of the video filter
 
 static camera cam = {
 	{0.0F, 0.0F, 0.0F},
@@ -353,7 +371,7 @@ draw_vert (u8 pos, u8 c, f32 s, f32 t)
 }
 
 static inline void
-draw_square (Mtx v)
+draw_square_uv (Mtx v, f32 s0, f32 t0, f32 s1, f32 t1)
 {
 	Mtx m;			// model matrix.
 	Mtx mv;			// modelview matrix.
@@ -364,11 +382,17 @@ draw_square (Mtx v)
 
 	GX_LoadPosMtxImm (mv, GX_PNMTX0);
 	GX_Begin (GX_QUADS, GX_VTXFMT0, 4);
-	draw_vert (0, 0, texS0, texT0);
-	draw_vert (1, 0, texS1, texT0);
-	draw_vert (2, 0, texS1, texT1);
-	draw_vert (3, 0, texS0, texT1);
+	draw_vert (0, 0, s0, t0);
+	draw_vert (1, 0, s1, t0);
+	draw_vert (2, 0, s1, t1);
+	draw_vert (3, 0, s0, t1);
 	GX_End ();
+}
+
+static inline void
+draw_square (Mtx v)
+{
+	draw_square_uv (v, texS0, texT0, texS1, texT1);
 }
 
 /****************************************************************************
@@ -761,6 +785,96 @@ static void AutoCropView(f32 *u0, f32 *u1, f32 *v0, f32 *v1, f32 *xsize, f32 *ys
 	autocrop_view(&autoCrop, autoCropMode, vwidth, AutoCropLines(), xroom, yroom, u0, u1, v0, v1, xsize, ysize);
 }
 
+// Chooses the sharp scaling for a crop drawn at width x height EFB pixels.
+static void UpdateSharp(int width, int height)
+{
+	sharpW = sharpH = 0;
+
+	if (GCSettings.bilinear || autoCropMode == AUTOCROP_OFF || !vmode || vmode->aa)
+		return;
+	if (texS0 == 0.0f && texS1 == 1.0f && texT0 == 0.0f && texT1 == 1.0f)
+		return; // nothing cropped: the original scaling
+
+	// visible part in texels (whole texels: the crop edges are whole pixels)
+	const int cw = (int) ((texS1 - texS0) * vwidth * fscale + 0.5f);
+	const int ch = (int) ((texT1 - texT0) * vheight * fscale + 0.5f);
+	if (cw <= 0 || ch <= 0)
+		return;
+
+	const f32 sx = (f32) width / cw, sy = (f32) height / ch;
+	const bool xwhole = fabsf(sx - (int) (sx + 0.5f)) < 0.01f;
+	const bool ywhole = fabsf(sy - (int) (sy + 0.5f)) < 0.01f;
+	if (xwhole && ywhole)
+		return; // whole-number scaling is already even
+
+	// enlarge by the next whole number, as long as it fits the EFB
+	int nx = (int) ceilf(sx - 0.01f), ny = (int) ceilf(sy - 0.01f);
+	if (nx < 1) nx = 1;
+	if (ny < 1) ny = 1;
+	while (nx > 1 && cw * nx > SHARP_MAX_WIDTH) nx--;
+	while (ny > 1 && ch * ny > SHARP_MAX_HEIGHT) ny--;
+	if (nx == 1 && ny == 1)
+		return;
+	if (cw * nx > SHARP_MAX_WIDTH || ch * ny > SHARP_MAX_HEIGHT)
+		return;
+
+	sharpW = cw * nx;
+	sharpH = ch * ny;
+	sharpTexW = (sharpW + 3) & ~3;
+	sharpTexH = (sharpH + 3) & ~3;
+
+	// the quad covers the viewport exactly (see DrawSharp)
+	sharpSquare[0] = sharpSquare[9]  = -(sharpW / 2);
+	sharpSquare[6] = sharpSquare[3]  = sharpW - sharpW / 2;
+	sharpSquare[4] = sharpSquare[1]  = sharpH / 2;
+	sharpSquare[7] = sharpSquare[10] = sharpH / 2 - sharpH;
+	sharpSquare[2] = sharpSquare[5] = sharpSquare[8] = sharpSquare[11] = 0;
+	DCFlushRange (sharpSquare, sizeof(sharpSquare));
+	GX_InvVtxCache ();
+
+	if (!sharpTexReady)
+	{
+		// nothing of it may stay in the CPU cache once the GPU writes it
+		DCFlushRange (sharpTex, sizeof(sharpTex));
+		sharpTexReady = true;
+	}
+	GX_InitTexObj (&sharpTexObj, sharpTex, sharpTexW, sharpTexH, GX_TF_RGB565, GX_CLAMP, GX_CLAMP, GX_FALSE);
+}
+
+// Draws the crop enlarged by whole numbers (nearest), then smoothed to the
+// quad. See UpdateSharp.
+static void DrawSharp()
+{
+	Mtx44 p;
+
+	// 1. enlarge, nearest sampling, into the top left corner of the EFB
+	GX_SetViewport (0, 0, sharpW, sharpH, 0, 1);
+	GX_SetScissor (0, 0, sharpW, sharpH);
+	guOrtho (p, sharpSquare[1], sharpSquare[7], sharpSquare[0], sharpSquare[3], 100, 1000);
+	GX_LoadProjectionMtx (p, GX_ORTHOGRAPHIC);
+	GX_SetArray (GX_VA_POS, sharpSquare, 3 * sizeof (s16));
+	GX_LoadTexObj (&texobj, GX_TEXMAP0);
+	draw_square (view);
+
+	// copy it to a texture, clearing that part of the EFB
+	GX_SetCopyFilter (GX_FALSE, NULL, GX_FALSE, NULL);
+	GX_SetTexCopySrc (0, 0, sharpTexW, sharpTexH);
+	GX_SetTexCopyDst (sharpTexW, sharpTexH, GX_TF_RGB565, GX_FALSE);
+	GX_CopyTex (sharpTex, GX_TRUE);
+	GX_PixModeSync ();
+	GX_InvalidateTexAll ();
+
+	// 2. back to the screen: smoothed (bilinear) to the size of the quad
+	GX_SetCopyFilter (vmode->aa, vmode->sample_pattern, (vmode->xfbMode == VI_XFBMODE_SF) ? GX_FALSE : GX_TRUE, vmode->vfilter);
+	GX_SetViewport (0, 0, vmode->fbWidth, vmode->efbHeight, 0, 1);
+	GX_SetScissor (0, 0, vmode->fbWidth, vmode->efbHeight);
+	guOrtho (p, vmode->efbHeight / 2, -(vmode->efbHeight / 2), -(vmode->fbWidth / 2), vmode->fbWidth / 2, 100, 1000);
+	GX_LoadProjectionMtx (p, GX_ORTHOGRAPHIC);
+	GX_SetArray (GX_VA_POS, square, 3 * sizeof (s16));
+	GX_LoadTexObj (&sharpTexObj, GX_TEXMAP0);
+	draw_square_uv (view, 0.0f, 0.0f, (f32) sharpW / sharpTexW, (f32) sharpH / sharpTexH);
+}
+
 // Sets the quad and texture coordinates for the whole frame (quadX x quadY)
 // or its auto crop.
 static void UpdateQuad()
@@ -782,6 +896,8 @@ static void UpdateQuad()
 	texT0 = v0;
 	texT1 = v1;
 	autoCropDirty = false;
+
+	UpdateSharp(2 * x, 2 * y);
 }
 
 // Measures the frame in GFX.Screen. Returns true when the crop changed.
@@ -981,7 +1097,15 @@ update_video (int width, int height)
 	DCFlushRange (texturemem, TEXTUREMEM_SIZE);	// update the texture memory
 	GX_InvalidateTexAll ();
 
-	draw_square (view);		// draw the quad
+	if (sharpW > 0)
+	{
+		DrawSharp ();	// auto crop, enlarged sharply
+	}
+	else
+	{
+		GX_LoadTexObj (&texobj, GX_TEXMAP0);
+		draw_square (view);		// draw the quad
+	}
 
 	GX_DrawDone ();
 
