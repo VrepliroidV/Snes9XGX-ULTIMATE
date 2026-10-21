@@ -34,6 +34,17 @@ jobs:
           exit 1
         fi
     
+    # Static data must stay well inside MEM1
+    - name: Memory use
+      if: ${{ matrix.image == 'Wii' }}
+      shell: bash
+      run: |
+        elf=executables/snes9xtx-wii.elf
+        nm=/opt/devkitpro/devkitPPC/bin/powerpc-eabi-nm
+        end=$($nm "$elf" | awk '($3 == "_end" || $3 == "__bss_end") && !e { e = $1 } END { print e }')
+        sizes=$(/opt/devkitpro/devkitPPC/bin/powerpc-eabi-size "$elf" | awk 'END { print }')
+        echo "::notice title=Memory use::end of static data 0x$end (MEM1 ends at 0x81800000); size: $sizes"
+
     # Exception screens show code addresses. List them (SRR0 and the stack
     # dump) in crash-addresses.txt and this step names the functions.
     - name: Resolve crash addresses
