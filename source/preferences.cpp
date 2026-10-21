@@ -151,6 +151,7 @@ preparePrefsData ()
 	createXMLSetting("ShowFrameRate", "Show Frame Rate", toStr(GCSettings.ShowFrameRate));
 	createXMLSetting("crosshair", "Show Crosshair", toStr(GCSettings.crosshair));
 	createXMLSetting("AutoCrop", "Auto Crop Black Borders", toStr(GCSettings.AutoCrop));
+	createXMLSetting("AutoCropScale", "Auto Crop Scaling", toStr(GCSettings.AutoCropScale));
 	createXMLSetting("xshift", "Horizontal Video Shift", toStr(GCSettings.xshift));
 	createXMLSetting("yshift", "Vertical Video Shift", toStr(GCSettings.yshift));
 
@@ -346,6 +347,7 @@ decodePrefsData ()
 			loadXMLSetting(&GCSettings.ShowFrameRate, "ShowFrameRate");
 			loadXMLSetting(&GCSettings.crosshair, "crosshair");
 			loadXMLSetting(&GCSettings.AutoCrop, "AutoCrop");
+			loadXMLSetting(&GCSettings.AutoCropScale, "AutoCropScale");
 			loadXMLSetting(&GCSettings.xshift, "xshift");
 			loadXMLSetting(&GCSettings.yshift, "yshift");
 
@@ -426,6 +428,8 @@ void FixInvalidSettings()
 		GCSettings.Region = REGION_AUTO;
 	if(GCSettings.AutoCrop < AUTOCROP_OFF || GCSettings.AutoCrop >= AUTOCROP_MODES)
 		GCSettings.AutoCrop = AUTOCROP_OFF;
+	if(GCSettings.AutoCropScale < AUTOCROP_SCALE_SMOOTH || GCSettings.AutoCropScale >= AUTOCROP_SCALINGS)
+		GCSettings.AutoCropScale = AUTOCROP_SCALE_SMOOTH;
 	if(!(GCSettings.SFXVolume >= 0 && GCSettings.SFXVolume <= 100))
 		GCSettings.SFXVolume = 20;
 	if(GCSettings.language < 0 || GCSettings.language >= LANG_LENGTH)
@@ -460,6 +464,7 @@ DefaultSettings ()
 	GCSettings.VideoFilter = FILTER_NONE; // No video filter
 	GCSettings.crosshair = 1; // Enabled by default
 	GCSettings.AutoCrop = AUTOCROP_OFF; // Disabled by default
+	GCSettings.AutoCropScale = AUTOCROP_SCALE_SMOOTH;
 
 	GCSettings.aspect = 0;
 

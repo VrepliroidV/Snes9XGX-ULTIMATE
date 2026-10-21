@@ -3777,6 +3777,7 @@ static int MenuSettingsVideo()
 	sprintf(options.name[i++], "Show Frame Rate");
 	sprintf(options.name[i++], "Show Crosshair");
 	sprintf(options.name[i++], "Auto Crop");
+	sprintf(options.name[i++], "Auto Crop Scaling");
 	options.length = i;
 
 #ifdef HW_DOL
@@ -3889,6 +3890,10 @@ static int MenuSettingsVideo()
 			case 11:
 				GCSettings.AutoCrop = (GCSettings.AutoCrop + 1) % AUTOCROP_MODES;
 				break;
+
+			case 12:
+				GCSettings.AutoCropScale = (GCSettings.AutoCropScale + 1) % AUTOCROP_SCALINGS;
+				break;
 		}
 
 		if(ret >= 0 || firstRun)
@@ -3939,6 +3944,11 @@ static int MenuSettingsVideo()
 				sprintf (options.value[11], "Stretch (fill frame)");
 			else
 				sprintf (options.value[11], "Off");
+
+			if (GCSettings.AutoCropScale == AUTOCROP_SCALE_INTEGER)
+				sprintf (options.value[12], "Integer (no blended lines)");
+			else
+				sprintf (options.value[12], "Smooth (fill the frame)");
 
 			optionBrowser.TriggerUpdate();
 		}

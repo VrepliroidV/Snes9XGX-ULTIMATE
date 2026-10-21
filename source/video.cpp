@@ -109,6 +109,7 @@ static s16 square[] ATTRIBUTE_ALIGN (32) =
 /*** Auto crop of black borders ***/
 static autocrop_state autoCrop;
 static int autoCropMode = AUTOCROP_OFF; // mode the current crop belongs to
+static int autoCropScale = AUTOCROP_SCALE_SMOOTH; // scaling the quad was set for
 static bool autoCropDirty = false;      // the quad must be updated
 static u8 autoCropRows[MAX_SNES_HEIGHT];
 static int quadX = HASPECT, quadY = VASPECT; // half size of the whole frame on screen
@@ -884,10 +885,33 @@ static void UpdateQuad()
 
 	const int x = (int) (quadX * xsize + 0.5f);
 	const int y = (int) (quadY * ysize + 0.5f);
-	square[6] = square[3]  =  x + GCSettings.xshift;
-	square[0] = square[9]  = -x + GCSettings.xshift;
-	square[4] = square[1]  =  y - GCSettings.yshift;
-	square[7] = square[10] = -y - GCSettings.yshift;
+	int left = -x, right = x, top = y, bottom = -y; // y up
+
+	const bool cropped = !(u0 == 0.0f && u1 == 1.0f && v0 == 0.0f && v1 == 1.0f);
+	autoCropScale = GCSettings.AutoCropScale;
+	if (cropped && autoCropScale == AUTOCROP_SCALE_INTEGER)
+	{
+		// whole-number scaling: every texel covers the same number of pixels
+		const int cw = (int) ((u1 - u0) * vwidth * fscale + 0.5f);
+		const int ch = (int) ((v1 - v0) * vheight * fscale + 0.5f);
+		if (cw > 0 && ch > 0)
+		{
+			int nx = (int) ((f32) (2 * x) / cw + 0.01f);
+			int ny = (int) ((f32) (2 * y) / ch + 0.01f);
+			if (nx < 1) nx = 1;
+			if (ny < 1) ny = 1;
+			const int w = cw * nx, h = ch * ny;
+			left = -(w / 2);
+			right = left + w;
+			top = h / 2;
+			bottom = top - h;
+		}
+	}
+
+	square[6] = square[3]  = right + GCSettings.xshift;
+	square[0] = square[9]  = left + GCSettings.xshift;
+	square[4] = square[1]  = top - GCSettings.yshift;
+	square[7] = square[10] = bottom - GCSettings.yshift;
 	DCFlushRange (square, 32); // update memory BEFORE the GPU accesses it!
 	GX_InvVtxCache ();
 
@@ -897,7 +921,10 @@ static void UpdateQuad()
 	texT1 = v1;
 	autoCropDirty = false;
 
-	UpdateSharp(2 * x, 2 * y);
+	if (autoCropScale == AUTOCROP_SCALE_INTEGER)
+		sharpW = sharpH = 0; // already even
+	else
+		UpdateSharp(right - left, top - bottom);
 }
 
 // Measures the frame in GFX.Screen. Returns true when the crop changed.
@@ -1077,6 +1104,8 @@ update_video (int width, int height)
 		autocrop_reset_tracking(&autoCrop);
 		autoCropDirty = true;
 	}
+	if (GCSettings.AutoCropScale != autoCropScale)
+		autoCropDirty = true;
 	if (autoCropMode != AUTOCROP_OFF && AutoCropMeasure())
 		autoCropDirty = true;
 	if (autoCropDirty)

@@ -714,3 +714,12 @@ msgstr "Código inválido"
 
 msgid "not a valid code. Use Game Genie (XXXX-XXXX) or Action Replay (XXXXXXXX)."
 msgstr "não é um código válido. Use Game Genie (XXXX-XXXX) ou Action Replay (XXXXXXXX)."
+
+msgid "Auto Crop Scaling"
+msgstr "Escala do Auto Crop"
+
+msgid "Integer (no blended lines)"
+msgstr "Inteira (sem linhas misturadas)"
+
+msgid "Smooth (fill the frame)"
+msgstr "Suave (preenche o quadro)"
