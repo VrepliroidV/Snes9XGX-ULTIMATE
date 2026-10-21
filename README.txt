@@ -15,10 +15,17 @@ Update History
   per game in <game>.autocrop next to the saves
 - Auto Crop Scaling: Smooth (sharp scaling when bilinear filtering is off)
   or Integer (whole-number scaling only)
+- Automatic CPU overclock (Emulation Hacks > CPU Overclocking: Auto): one
+  level more when the game slows down, one less when it is not needed; off
+  while the screen is dark or fading, while NMI is off, while music goes to
+  the sound chip and when a game starts. Shown under the frame rate
+- Per-game settings (Game Settings > Per-Game): video, audio and emulation
+  options kept for one game in <game>.cfg next to the saves
 - Cheats: Add Code types Game Genie or Action Replay codes (the - : and +
-  are added by themselves), Delete Code removes one; saved to the game's
-  cheat file with their on/off state, and codes saved as on work again when
-  the game loads. Works with every controller
+  are added by themselves) and a name for them, Rename Code and Delete Code;
+  saved to the game's cheat file with their on/off state, and codes saved as
+  on work again when the game loads. Works with every controller, and the
+  d-pad reaches Go Back
 - Removed the L + R + Start and L + R + Plus menu combos
 - pt-BR and pt translations for the new texts
 
