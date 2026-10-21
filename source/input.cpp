@@ -54,6 +54,8 @@ int ds3chan = 0;
 // controllers: controller N on the USB side feeds GameCube port N, in menus
 // and in game, and uses the GameCube button mapping.
 static u16 usbPadHeld[4] = {0,0,0,0};
+// buttons of the real GameCube controller, before the USB pad is added
+static u16 gcPadHeld[4] = {0,0,0,0};
 
 static u16 XInputToGCPad(u32 x)
 {
@@ -415,6 +417,7 @@ UpdatePads()
 	for(int i=0; i < 4; i++)
 	{
 		u16 usb = XInputToGCPad(XInput_ButtonsHeld(i));
+		gcPadHeld[i] = userInput[i].pad.btns_h;
 		userInput[i].pad.btns_d |= usb & ~usbPadHeld[i];
 		userInput[i].pad.btns_u |= usbPadHeld[i] & ~usb;
 		userInput[i].pad.btns_h |= usb;
@@ -776,15 +779,29 @@ static void decodepad (int chan, int emuChan)
 #endif
 }
 
+// Buttons held on the real GameCube controller of a port. The GameCube menu
+// combo (L + R + Start) only counts there: USB pads, read as GameCube
+// controllers, open the menu with L + Select + Start only, so L + R + Start
+// stays free for games and cheats.
+static u16 GCPadOnlyHeld(int i)
+{
+#ifdef HW_RVL
+	return gcPadHeld[i];
+#else
+	return userInput[i].pad.btns_h;
+#endif
+}
+
 bool MenuRequested()
 {
 	for(int i=0; i<4; i++)
 	{
+		const u16 gc = GCPadOnlyHeld(i);
 		if (
 			(userInput[i].pad.substickX < -70) ||
-			(userInput[i].pad.btns_h & PAD_TRIGGER_L &&
-			userInput[i].pad.btns_h & PAD_TRIGGER_R &&
-			userInput[i].pad.btns_h & PAD_BUTTON_START)
+			(gc & PAD_TRIGGER_L &&
+			gc & PAD_TRIGGER_R &&
+			gc & PAD_BUTTON_START)
 			#ifdef HW_RVL
 			|| (userInput[i].wpad->btns_h & WPAD_BUTTON_HOME) ||
 			(userInput[i].wpad->btns_h & WPAD_CLASSIC_BUTTON_HOME) ||
