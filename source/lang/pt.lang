@@ -684,3 +684,33 @@ msgstr "O IOS actual não é suportado. A funcionalidade e/ou estabilidade podem
 
 msgid "Turkish"
 msgstr "Turco"
+
+msgid "Fit (keep proportions)"
+msgstr "Fit (manter proporções)"
+
+msgid "Stretch (fill frame)"
+msgstr "Stretch (preencher o quadro)"
+
+msgid "Add Code"
+msgstr "Adicionar Código"
+
+msgid "Delete Code"
+msgstr "Apagar Código"
+
+msgid "Cheats - Choose a code to delete"
+msgstr "Truques - Escolha o código a apagar"
+
+msgid "No codes yet. Choose Add Code to type one."
+msgstr "Ainda não há códigos. Escolha Adicionar Código para escrever um."
+
+msgid "Could not save the cheat file!"
+msgstr "Não foi possível guardar o ficheiro de truques!"
+
+msgid "Too many codes! Delete one first."
+msgstr "Demasiados códigos! Apague um primeiro."
+
+msgid "Invalid code"
+msgstr "Código inválido"
+
+msgid "not a valid code. Use Game Genie (XXXX-XXXX) or Action Replay (XXXXXXXX)."
+msgstr "não é um código válido. Use Game Genie (XXXX-XXXX) ou Action Replay (XXXXXXXX)."

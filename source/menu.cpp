@@ -45,8 +45,9 @@
 #include "snes9x/apu/apu.h"
 #include "snes9x/cheats.h"
 
+#include "cheatmgr.h"
+
 extern SCheatData Cheat;
-extern void ToggleCheat(uint32);
 
 #define THREAD_SLEEP 100
 
@@ -2333,10 +2334,7 @@ static int MenuGameSettings()
 		else if(cheatsBtn.GetState() == STATE_CLICKED)
 		{
 			cheatsBtn.ResetState();
-			if(Cheat.g.size() > 0)
-				menu = MENU_GAMESETTINGS_CHEATS;
-			else
-				InfoPrompt("Cheats file not found!");
+			menu = MENU_GAMESETTINGS_CHEATS; // codes can be typed there
 		}
 		else if(hacksBtn.GetState() == STATE_CLICKED)
 		{
@@ -2372,8 +2370,17 @@ static int MenuGameSettings()
  * MenuGameCheats
  *
  * Displays a list of cheats available, and allows the user to enable/disable
- * them.
+ * them, type new codes (Game Genie, Pro Action Replay or raw) and delete
+ * codes. Changes are saved to the game's cheat file right away.
  ***************************************************************************/
+static bool cheatDeleteMode = false;
+
+static void SaveCheatsOrWarn()
+{
+	if(!SaveCheats())
+		ErrorPrompt("Could not save the cheat file!");
+}
+
 static int MenuGameCheats()
 {
 	int menu = MENU_NONE;
@@ -2381,7 +2388,7 @@ static int MenuGameCheats()
 	u16 i = 0;
 	OptionList options;
 
-	for(i=0; i < Cheat.g.size(); i++)
+	for(i=0; i < Cheat.g.size() && i < MAX_OPTIONS; i++)
 	{
 		snprintf (options.name[i], 50, "%s", Cheat.g[i].name);
 		sprintf (options.value[i], "%s", Cheat.g[i].enabled == true ? "On" : "Off");
@@ -2389,9 +2396,17 @@ static int MenuGameCheats()
 
 	options.length = i;
 
-	GuiText titleTxt("Game Settings - Cheats", 26, (GXColor){255, 255, 255, 255});
+	GuiText titleTxt(cheatDeleteMode ? "Cheats - Choose a code to delete" : "Game Settings - Cheats", 26, (GXColor){255, 255, 255, 255});
 	titleTxt.SetAlignment(ALIGN_LEFT, ALIGN_TOP);
 	titleTxt.SetPosition(50,50);
+
+	GuiText hintTxt("Game Genie: XXXX-XXXX   Action Replay: XXXXXXXX", 16, (GXColor){255, 255, 255, 255});
+	hintTxt.SetAlignment(ALIGN_LEFT, ALIGN_TOP);
+	hintTxt.SetPosition(52,84);
+
+	GuiText emptyTxt("No codes yet. Choose Add Code to type one.", 20, (GXColor){255, 255, 255, 255});
+	emptyTxt.SetAlignment(ALIGN_CENTRE, ALIGN_MIDDLE);
+	emptyTxt.SetPosition(0, -10);
 
 	GuiSound btnSoundOver(button_over_pcm, button_over_pcm_size, SOUND_PCM);
 	GuiSound btnSoundClick(button_click_pcm, button_click_pcm_size, SOUND_PCM);
@@ -2420,6 +2435,36 @@ static int MenuGameCheats()
 	backBtn.SetTrigger(&trig1);
 	backBtn.SetEffectGrow();
 
+	GuiText addBtnTxt("Add Code", 22, (GXColor){0, 0, 0, 255});
+	GuiImage addBtnImg(&btnOutline);
+	GuiImage addBtnImgOver(&btnOutlineOver);
+	GuiButton addBtn(btnOutline.GetWidth(), btnOutline.GetHeight());
+	addBtn.SetAlignment(ALIGN_CENTRE, ALIGN_BOTTOM);
+	addBtn.SetPosition(0, -35);
+	addBtn.SetLabel(&addBtnTxt);
+	addBtn.SetImage(&addBtnImg);
+	addBtn.SetImageOver(&addBtnImgOver);
+	addBtn.SetSoundOver(&btnSoundOver);
+	addBtn.SetSoundClick(&btnSoundClick);
+	addBtn.SetTrigger(trigA);
+	addBtn.SetTrigger(trig2);
+	addBtn.SetEffectGrow();
+
+	GuiText deleteBtnTxt(cheatDeleteMode ? "Cancel" : "Delete Code", 22, (GXColor){0, 0, 0, 255});
+	GuiImage deleteBtnImg(&btnOutline);
+	GuiImage deleteBtnImgOver(&btnOutlineOver);
+	GuiButton deleteBtn(btnOutline.GetWidth(), btnOutline.GetHeight());
+	deleteBtn.SetAlignment(ALIGN_RIGHT, ALIGN_BOTTOM);
+	deleteBtn.SetPosition(-50, -35);
+	deleteBtn.SetLabel(&deleteBtnTxt);
+	deleteBtn.SetImage(&deleteBtnImg);
+	deleteBtn.SetImageOver(&deleteBtnImgOver);
+	deleteBtn.SetSoundOver(&btnSoundOver);
+	deleteBtn.SetSoundClick(&btnSoundClick);
+	deleteBtn.SetTrigger(trigA);
+	deleteBtn.SetTrigger(trig2);
+	deleteBtn.SetEffectGrow();
+
 	GuiOptionBrowser optionBrowser(552, 248, &options);
 	optionBrowser.SetPosition(0, 108);
 	optionBrowser.SetAlignment(ALIGN_CENTRE, ALIGN_TOP);
@@ -2427,9 +2472,15 @@ static int MenuGameCheats()
 	HaltGui();
 	GuiWindow w(screenwidth, screenheight);
 	w.Append(&backBtn);
+	w.Append(&addBtn);
+	if(options.length > 0)
+		w.Append(&deleteBtn);
 	mainWindow->Append(&optionBrowser);
 	mainWindow->Append(&w);
 	mainWindow->Append(&titleTxt);
+	mainWindow->Append(&hintTxt);
+	if(options.length == 0)
+		mainWindow->Append(&emptyTxt);
 	ResumeGui();
 
 	while(menu == MENU_NONE)
@@ -2438,15 +2489,70 @@ static int MenuGameCheats()
 
 		ret = optionBrowser.GetClickedOption();
 
-		if(ret >= 0)
+		if(ret >= 0 && cheatDeleteMode)
+		{
+			char msg[200];
+			snprintf(msg, sizeof(msg), "%s", Cheat.g[ret].name);
+			if(WindowPrompt("Delete Code", msg, "Delete", "Cancel"))
+			{
+				DeleteCheat(ret);
+				SaveCheatsOrWarn();
+			}
+			cheatDeleteMode = false;
+			menu = MENU_GAMESETTINGS_CHEATS; // show the new list
+		}
+		else if(ret >= 0)
 		{
 			ToggleCheat(ret);
 			sprintf (options.value[ret], "%s", Cheat.g[ret].enabled == true ? "On" : "Off");
 			optionBrowser.TriggerUpdate();
+			SaveCheatsOrWarn();
+		}
+
+		if(addBtn.GetState() == STATE_CLICKED)
+		{
+			addBtn.ResetState();
+			cheatDeleteMode = false;
+
+			if(CheatCount() >= MAX_OPTIONS)
+			{
+				InfoPrompt("Too many codes! Delete one first.");
+			}
+			else
+			{
+				char code[200] = "";
+				OnScreenKeyboard(code, 199);
+
+				char bad[64];
+				if(code[0] == 0)
+				{
+					// cancelled or nothing typed
+				}
+				else if(AddCheatCode(code, bad, sizeof(bad)) >= 0)
+				{
+					SaveCheatsOrWarn();
+					menu = MENU_GAMESETTINGS_CHEATS; // show the new list
+				}
+				else
+				{
+					char msg[300];
+					snprintf(msg, sizeof(msg), "%s - %s", bad[0] ? bad : code,
+						gettext("not a valid code. Use Game Genie (XXXX-XXXX) or Action Replay (XXXXXXXX)."));
+					WindowPrompt("Invalid code", msg, "OK", NULL);
+				}
+			}
+		}
+
+		if(deleteBtn.GetState() == STATE_CLICKED)
+		{
+			deleteBtn.ResetState();
+			cheatDeleteMode = !cheatDeleteMode;
+			menu = MENU_GAMESETTINGS_CHEATS; // change the title and button
 		}
 
 		if(backBtn.GetState() == STATE_CLICKED)
 		{
+			cheatDeleteMode = false;
 			menu = MENU_GAMESETTINGS;
 		}
 	}
@@ -2454,6 +2560,8 @@ static int MenuGameCheats()
 	mainWindow->Remove(&optionBrowser);
 	mainWindow->Remove(&w);
 	mainWindow->Remove(&titleTxt);
+	mainWindow->Remove(&hintTxt);
+	mainWindow->Remove(&emptyTxt);
 	return menu;
 }
 

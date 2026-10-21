@@ -699,3 +699,33 @@ msgstr "Orientação do WiiMote"
 
 msgid "Yes"
 msgstr "Sim"
+
+msgid "Fit (keep proportions)"
+msgstr "Fit (manter proporções)"
+
+msgid "Stretch (fill frame)"
+msgstr "Stretch (preencher o quadro)"
+
+msgid "Add Code"
+msgstr "Adicionar Código"
+
+msgid "Delete Code"
+msgstr "Apagar Código"
+
+msgid "Cheats - Choose a code to delete"
+msgstr "Trapaças - Escolha o código para apagar"
+
+msgid "No codes yet. Choose Add Code to type one."
+msgstr "Nenhum código ainda. Escolha Adicionar Código para digitar um."
+
+msgid "Could not save the cheat file!"
+msgstr "Não foi possível salvar o arquivo de trapaças!"
+
+msgid "Too many codes! Delete one first."
+msgstr "Códigos demais! Apague um primeiro."
+
+msgid "Invalid code"
+msgstr "Código inválido"
+
+msgid "not a valid code. Use Game Genie (XXXX-XXXX) or Action Replay (XXXXXXXX)."
+msgstr "não é um código válido. Use Game Genie (XXXX-XXXX) ou Action Replay (XXXXXXXX)."
