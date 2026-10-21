@@ -24,6 +24,7 @@
 #include "filebrowser.h"
 #include "input.h"
 #include "button_mapping.h"
+#include "gamesettings.h"
 
 #include "snes9x/apu/apu.h"
 
@@ -576,8 +577,22 @@ DefaultSettings ()
  ***************************************************************************/
 static char prefpath[MAXPATHLEN] = { 0 };
 
+static bool SaveGlobalPrefs (bool silent);
+
+// The loaded game's own settings go to its file; the global preferences keep
+// the global values of those options.
 bool
 SavePrefs (bool silent)
+{
+	GameSettingsSave();
+	GameSettingsBeginGlobalSave();
+	bool result = SaveGlobalPrefs(silent);
+	GameSettingsEndGlobalSave();
+	return result;
+}
+
+static bool
+SaveGlobalPrefs (bool silent)
 {
 	char filepath[MAXPATHLEN];
 	int datasize;

@@ -187,6 +187,7 @@ enum {
 };
 
 void ApplyRegionSetting();
+void ApplyEmulationSettings();
 
 // Start-up markers in the USB log (sd:/snes9xtx/xinput_usb.log), for the
 // crash that happens when a USB device connects while the menu opens.

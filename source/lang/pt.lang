@@ -747,3 +747,18 @@ msgstr "Nome do código (opcional)"
 
 msgid "New name of the code"
 msgstr "Novo nome do código"
+
+msgid "Per-Game: On"
+msgstr "Por Jogo: Sim"
+
+msgid "Per-Game: Off"
+msgstr "Por Jogo: Não"
+
+msgid "Per-Game Settings"
+msgstr "Definições por Jogo"
+
+msgid "From now on, the video, audio and emulation settings you change are kept for this game only."
+msgstr "A partir de agora, as definições de vídeo, som e emulação que mudar valem só para este jogo."
+
+msgid "Use the global settings for this game again?"
+msgstr "Voltar a usar as definições gerais neste jogo?"

@@ -25,6 +25,7 @@
 #include "filebrowser.h"
 #include "menu.h"
 #include "video.h"
+#include "gamesettings.h"
 #include "fileop.h"
 #include "input.h"
 #include "gcunzip.h"
@@ -520,6 +521,7 @@ int BrowserLoadFile()
 
 	SNESROMSize = 0;
 	S9xDeleteCheats();
+	GameSettingsLoad(); // the game's own video, audio and emulation options, if any
 	ApplyRegionSetting(); // the core clears the force flags after each load
 	Memory.LoadROM("ROM");
 

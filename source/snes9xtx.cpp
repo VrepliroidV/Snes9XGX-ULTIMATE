@@ -94,6 +94,60 @@ void ExitCleanup()
 	void (*PSOReload) () = (void (*)()) 0x80001800;
 #endif
 
+/****************************************************************************
+ * ApplyEmulationSettings
+ *
+ * Sound interpolation, SuperFX and CPU overclock from GCSettings to the core
+ * (the other options are read each time the game starts again). The SuperFX
+ * speed takes effect at the next reset or game load.
+ ***************************************************************************/
+void ApplyEmulationSettings()
+{
+	switch (GCSettings.Interpolation)
+	{
+		case 0: Settings.InterpolationMethod = DSP_INTERPOLATION_GAUSSIAN; break;
+		case 1: Settings.InterpolationMethod = DSP_INTERPOLATION_LINEAR; break;
+		case 2: Settings.InterpolationMethod = DSP_INTERPOLATION_CUBIC; break;
+		case 3: Settings.InterpolationMethod = DSP_INTERPOLATION_SINC; break;
+		case 4: Settings.InterpolationMethod = DSP_INTERPOLATION_NONE; break;
+	}
+
+	switch (GCSettings.sfxOverclock)
+	{
+		case 0: Settings.SuperFXSpeedPerLine = 5823405; break;
+		case 1: Settings.SuperFXSpeedPerLine = 0.417 * 20.5e6; break;
+		case 2: Settings.SuperFXSpeedPerLine = 0.417 * 40.5e6; break;
+		case 3: Settings.SuperFXSpeedPerLine = 0.417 * 60.5e6; break;
+		case 4: Settings.SuperFXSpeedPerLine = 0.417 * 80.5e6; break;
+		case 5: Settings.SuperFXSpeedPerLine = 0.417 * 100.5e6; break;
+		case 6: Settings.SuperFXSpeedPerLine = 0.417 * 120.5e6; break;
+	}
+
+	switch (GCSettings.cpuOverclock)
+	{
+		case 0:
+			Settings.OneClockCycle = 6;
+			Settings.OneSlowClockCycle = 8;
+			Settings.TwoClockCycles = 12;
+			break;
+		case 1:
+			Settings.OneClockCycle = 6;
+			Settings.OneSlowClockCycle = 6;
+			Settings.TwoClockCycles = 12;
+			break;
+		case 2:
+			Settings.OneClockCycle = 4;
+			Settings.OneSlowClockCycle = 5;
+			Settings.TwoClockCycles = 6;
+			break;
+		case 3:
+			Settings.OneClockCycle = 3;
+			Settings.OneSlowClockCycle = 3;
+			Settings.TwoClockCycles = 3;
+			break;
+	}
+}
+
 void ExitApp()
 {
 	SavePrefs(SILENT);
@@ -505,51 +559,8 @@ int main(int argc, char *argv[])
 		if (firstRun)
 		{
 			firstRun = false;
-			switch (GCSettings.Interpolation)
-			{
-				case 0: Settings.InterpolationMethod = DSP_INTERPOLATION_GAUSSIAN; break;
-				case 1: Settings.InterpolationMethod = DSP_INTERPOLATION_LINEAR; break;
-				case 2: Settings.InterpolationMethod = DSP_INTERPOLATION_CUBIC; break;
-				case 3: Settings.InterpolationMethod = DSP_INTERPOLATION_SINC; break;
-				case 4: Settings.InterpolationMethod = DSP_INTERPOLATION_NONE; break;
-			}
-
-			switch (GCSettings.sfxOverclock)
-			{
-				case 0: Settings.SuperFXSpeedPerLine = 5823405; break;
-				case 1: Settings.SuperFXSpeedPerLine = 0.417 * 20.5e6; break;
-				case 2: Settings.SuperFXSpeedPerLine = 0.417 * 40.5e6; break;
-				case 3: Settings.SuperFXSpeedPerLine = 0.417 * 60.5e6; break;
-				case 4: Settings.SuperFXSpeedPerLine = 0.417 * 80.5e6; break;
-				case 5: Settings.SuperFXSpeedPerLine = 0.417 * 100.5e6; break;
-				case 6: Settings.SuperFXSpeedPerLine = 0.417 * 120.5e6; break;
-			}
-
+			ApplyEmulationSettings();
 			GCSettings.sfxOverclock > 0 ? S9xResetSuperFX() : S9xReset();
-
-			switch (GCSettings.cpuOverclock)
-			{
-				case 0:
-					Settings.OneClockCycle = 6;
-					Settings.OneSlowClockCycle = 8;
-					Settings.TwoClockCycles = 12;
-					break;
-				case 1:
-					Settings.OneClockCycle = 6;
-					Settings.OneSlowClockCycle = 6;
-					Settings.TwoClockCycles = 12;
-					break;
-				case 2:
-					Settings.OneClockCycle = 4;
-					Settings.OneSlowClockCycle = 5;
-					Settings.TwoClockCycles = 6;
-					break;
-				case 3:
-					Settings.OneClockCycle = 3;
-					Settings.OneSlowClockCycle = 3;
-					Settings.TwoClockCycles = 3;
-					break;
-			}
 		}
 		
 		autoboot = false;

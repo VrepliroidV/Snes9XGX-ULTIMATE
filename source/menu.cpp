@@ -47,6 +47,7 @@
 #include "snes9x/cheats.h"
 
 #include "cheatmgr.h"
+#include "gamesettings.h"
 
 extern SCheatData Cheat;
 
@@ -2305,9 +2306,28 @@ static int MenuGameSettings()
 	backBtn.SetTrigger(&trig1);
 	backBtn.SetEffectGrow();
 
+	// per-game settings: between Go Back and the logo
+	GuiImageData btnShortOutline(button_short_png);
+	GuiImageData btnShortOutlineOver(button_short_over_png);
+	GuiText perGameBtnTxt(GameSettingsActive() ? "Per-Game: On" : "Per-Game: Off", 18, (GXColor){0, 0, 0, 255});
+	GuiImage perGameBtnImg(&btnShortOutline);
+	GuiImage perGameBtnImgOver(&btnShortOutlineOver);
+	GuiButton perGameBtn(btnShortOutline.GetWidth(), btnShortOutline.GetHeight());
+	perGameBtn.SetAlignment(ALIGN_CENTRE, ALIGN_BOTTOM);
+	perGameBtn.SetPosition(30, -35);
+	perGameBtn.SetLabel(&perGameBtnTxt);
+	perGameBtn.SetImage(&perGameBtnImg);
+	perGameBtn.SetImageOver(&perGameBtnImgOver);
+	perGameBtn.SetSoundOver(&btnSoundOver);
+	perGameBtn.SetSoundClick(&btnSoundClick);
+	perGameBtn.SetTrigger(trigA);
+	perGameBtn.SetTrigger(trig2);
+	perGameBtn.SetEffectGrow();
+
 	HaltGui();
 	GuiWindow w(screenwidth, screenheight);
 	w.Append(&titleTxt);
+	w.Append(&perGameBtn);
 	w.Append(&mappingBtn);
 	w.Append(&videoBtn);
 	w.Append(&audioBtn);
@@ -2350,6 +2370,20 @@ static int MenuGameSettings()
 		{
 			menu = MENU_GAMESETTINGS_HACKS;
 		}
+		else if(perGameBtn.GetState() == STATE_CLICKED)
+		{
+			perGameBtn.ResetState();
+			if(!GameSettingsActive())
+			{
+				if(GameSettingsEnable())
+					InfoPrompt("From now on, the video, audio and emulation settings you change are kept for this game only.");
+			}
+			else if(WindowPrompt("Per-Game Settings", "Use the global settings for this game again?", "Yes", "No"))
+			{
+				GameSettingsDisable();
+			}
+			perGameBtnTxt.SetText(GameSettingsActive() ? "Per-Game: On" : "Per-Game: Off");
+		}
 		else if(closeBtn.GetState() == STATE_CLICKED)
 		{
 			menu = MENU_EXIT;
@@ -2370,6 +2404,8 @@ static int MenuGameSettings()
 			menu = MENU_GAME;
 		}
 	}
+
+	GameSettingsSave(); // the game's own options, when it has them
 
 	HaltGui();
 	mainWindow->Remove(&w);
