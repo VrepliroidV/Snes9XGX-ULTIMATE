@@ -38,6 +38,7 @@
 #include "filebrowser.h"
 #include "utils/autocrop.h"
 #include "utils/bezel.h"
+#include "bezel_default_png.h"
 
 extern void UpdatePlaybackRate(void);
 
@@ -437,12 +438,18 @@ static bool BezelFind(const char *name, char *path)
 	return false;
 }
 
-// The file of the bezel setting: Auto takes <game>.png, or else default.png.
+// The file of the bezel setting, or BEZEL_DEFAULT for the built-in one.
+// Auto takes <game>.png, or else default.png, or else the built-in one.
 static bool BezelFile(char *path)
 {
 	path[0] = 0;
 	if (GCSettings.Bezel[0] == 0)
 		return false;
+	if (strcmp(GCSettings.Bezel, BEZEL_DEFAULT) == 0)
+	{
+		strcpy(path, BEZEL_DEFAULT);
+		return true;
+	}
 	if (strcmp(GCSettings.Bezel, BEZEL_AUTO) != 0)
 		return BezelFind(GCSettings.Bezel, path);
 
@@ -453,7 +460,10 @@ static bool BezelFile(char *path)
 		if (BezelFind(name, path))
 			return true;
 	}
-	return BezelFind("default.png", path);
+	if (BezelFind("default.png", path))
+		return true;
+	strcpy(path, BEZEL_DEFAULT);
+	return true;
 }
 
 // Loads the bezel for the screen of rmode (NULL: no bezel), unless it was
@@ -472,7 +482,10 @@ static void BezelUpdate(GXRModeObj *rmode)
 
 	snprintf(bezelPath, sizeof(bezelPath), "%s", path);
 	bezelHeight = rmode->efbHeight;
-	if (bezel_load(&bezel, path, BEZEL_WIDTH, rmode->efbHeight))
+	const bool loaded = (strcmp(path, BEZEL_DEFAULT) == 0) ?
+		bezel_load_memory(&bezel, bezel_default_png, bezel_default_png_size, BEZEL_WIDTH, rmode->efbHeight) :
+		bezel_load(&bezel, path, BEZEL_WIDTH, rmode->efbHeight);
+	if (loaded)
 		GX_InitTexObj(&bezelTexObj, bezel.texture, bezel.tex_width, bezel.tex_height, GX_TF_RGBA8, GX_CLAMP, GX_CLAMP, GX_FALSE);
 }
 

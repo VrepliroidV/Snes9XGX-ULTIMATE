@@ -473,6 +473,7 @@ DefaultSettings ()
 	GCSettings.crosshair = 1; // Enabled by default
 	GCSettings.AutoCrop = AUTOCROP_OFF; // Disabled by default
 	GCSettings.AutoCropScale = AUTOCROP_SCALE_SMOOTH;
+	snprintf(GCSettings.Bezel, sizeof(GCSettings.Bezel), "%s", BEZEL_DEFAULT); // the built-in bezel (480i/480p)
 
 	GCSettings.aspect = 0;
 

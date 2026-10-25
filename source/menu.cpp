@@ -3884,13 +3884,18 @@ static int MenuSettingsFastForward()
 	return menu;
 }
 
-// Bezel option: Off, Auto (the game's name), then each file.
+// Bezel option: Off, Default (built in), Auto (the game's name), then each file.
 #define MAX_BEZELS 512
 
 static void NextBezel(char (*names)[BEZEL_NAME_MAX], int count)
 {
 	int i = -1; // Auto: the first file next
 	if (GCSettings.Bezel[0] == 0)
+	{
+		snprintf(GCSettings.Bezel, sizeof(GCSettings.Bezel), "%s", BEZEL_DEFAULT);
+		return;
+	}
+	if (strcmp(GCSettings.Bezel, BEZEL_DEFAULT) == 0)
 	{
 		snprintf(GCSettings.Bezel, sizeof(GCSettings.Bezel), "%s", BEZEL_AUTO);
 		return;
@@ -4111,6 +4116,8 @@ static int MenuSettingsVideo()
 
 			if (GCSettings.Bezel[0] == 0)
 				sprintf (options.value[13], "Off");
+			else if (strcmp(GCSettings.Bezel, BEZEL_DEFAULT) == 0)
+				sprintf (options.value[13], "Default (TV)");
 			else if (strcmp(GCSettings.Bezel, BEZEL_AUTO) == 0)
 				sprintf (options.value[13], "Auto (game name)");
 			else
