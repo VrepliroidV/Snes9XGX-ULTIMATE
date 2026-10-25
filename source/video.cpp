@@ -140,12 +140,15 @@ extern int fscale; // texture scale of the video filter
  bezel is drawn over it; a PNG without a window is a background, with the
  game in front of it at its usual size. */
 #define BEZEL_FOLDER APPFOLDER "/bezels"
-#define BEZEL_WIDTH 640 // width the bezels are made for (the screen's with a window)
+#define BEZEL_WIDTH 640    // EFB width with a bezel
+#define BEZEL_VI_WIDTH 704 // the whole picture of the TV (4:3 or 16:9)
 static bezel_image bezel;
 static GXTexObj bezelTexObj;
 static char bezelPath[MAXPATHLEN]; // the file tried last
 static int bezelHeight = 0;        // and the screen height it was for
 static int quadCX = 0, quadCY = 0; // centre of the quad on screen (y up)
+static f32 bezelXScale = 1.0f;     // game width with a background bezel / without
+static u16 viWidthSet = 0;         // VI width the current mode was set up with
 static const int bezelDevices[] = { DEVICE_SD, DEVICE_USB, DEVICE_SD_SLOTA, DEVICE_SD_SLOTB, DEVICE_SD_PORT2 };
 
 static camera cam = {
@@ -668,13 +671,14 @@ static GXRModeObj * FindVideoMode()
  ***************************************************************************/
 static void SetupVideoMode(GXRModeObj * mode)
 {
-	if(vmode == mode)
-		return;
+	if(vmode == mode && mode->viWidth == viWidthSet)
+		return; // (a bezel changes the width of the same mode)
 
 	VIDEO_SetPostRetraceCallback (NULL);
 	copynow = GX_FALSE;
 	VIDEO_Configure (mode);
 	VIDEO_Flush();
+	viWidthSet = mode->viWidth;
 
 	// Clear framebuffers etc.
 	VIDEO_ClearFrameBuffer (mode, xfb[0], COLOR_BLACK);
@@ -751,6 +755,7 @@ void ResetFbWidth(int width, GXRModeObj *rmode)
 	GX_InvVtxCache();
 	VIDEO_Configure(rmode);
 	VIDEO_Flush();
+	viWidthSet = rmode->viWidth;
 }
 
 /****************************************************************************
@@ -809,11 +814,21 @@ ResetVideo_Emu ()
 		// not for a screenshot taken in original rendering (see update_video)
 		BezelUpdate((GCSettings.render == 0 && oldRenderMode == -1) ? rmode : NULL);
 
-		// a bezel with a window is made for the whole width
-		if (GCSettings.aspect || BezelHole())
-			ResetFbWidth(640, rmode);
+		const int fbWidth = GCSettings.aspect ? 640 : 512;
+		bezelXScale = 1.0f;
+		if (bezel.texture)
+		{
+			// the bezel covers the whole picture of the TV; in front of a
+			// background the game keeps its width on screen
+			bezelXScale = ((f32) rmode->viWidth / fbWidth) * ((f32) BEZEL_WIDTH / BEZEL_VI_WIDTH);
+			rmode->viWidth = BEZEL_VI_WIDTH;
+			rmode->viXOrigin = (VI_MAX_WIDTH_NTSC - BEZEL_VI_WIDTH) / 2;
+			ResetFbWidth(BEZEL_WIDTH, rmode);
+		}
 		else
-			ResetFbWidth(512, rmode);
+		{
+			ResetFbWidth(fbWidth, rmode);
+		}
 		
 		Settings.SoundInputRate = 31920;
 		UpdatePlaybackRate();
@@ -924,9 +939,9 @@ static void UpdateSharp(int width, int height)
 
 	if (GCSettings.bilinear || !vmode || vmode->aa)
 		return;
-	if (!BezelHole() && (autoCropMode == AUTOCROP_OFF ||
+	if (!bezel.texture && (autoCropMode == AUTOCROP_OFF ||
 		(texS0 == 0.0f && texS1 == 1.0f && texT0 == 0.0f && texT1 == 1.0f)))
-		return; // nothing cropped: the original scaling (the window of a bezel is sharp too)
+		return; // nothing cropped: the original scaling (with a bezel it is sharp too)
 
 	// visible part in texels (whole texels: the crop edges are whole pixels)
 	const int cw = (int) ((texS1 - texS0) * vwidth * fscale + 0.5f);
@@ -1227,7 +1242,7 @@ update_video (int width, int height)
 		}
 		else
 		{
-			quadX = xscale;
+			quadX = (int) (xscale * bezelXScale + 0.5f);
 			quadY = yscale;
 			quadCX = GCSettings.xshift;
 			quadCY = -GCSettings.yshift;
