@@ -18,6 +18,7 @@
 #include <ogcsys.h>
 
 #include "snes9x/snes9x.h"
+#include "utils/bezel.h"
 
 void AllocGfxMem();
 void InitGCVideo ();
@@ -38,6 +39,9 @@ void AutoCropSaveGame();   // writes them when they changed
 void AutoCropReset();      // forgets the current crop (reset, mode change)
 // Screen position (0 to 1 across the screen) to SNES pixel coordinates
 void AutoCropMapPointer(float fx, float fy, int *x, int *y);
+
+// Bezels (GCSettings.Bezel): the PNG files in snes9xtx/bezels, for the menu
+int BezelList(char (*names)[BEZEL_NAME_MAX], int max);
 
 extern GXRModeObj *vmode;
 extern int screenheight;

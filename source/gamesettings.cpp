@@ -23,15 +23,19 @@
 
 // The options a game can have of its own: video, audio and emulation.
 // Buttons, controllers, folders and menu options stay global.
+enum { FIELD_INT, FIELD_FLOAT, FIELD_STRING };
+
 struct GameField
 {
 	const char *name;
-	bool isFloat;
+	int type;
 	size_t offset;
+	size_t size;
 };
 
-#define INT_FIELD(f)   { #f, false, offsetof(SGCSettings, f) }
-#define FLOAT_FIELD(f) { #f, true,  offsetof(SGCSettings, f) }
+#define INT_FIELD(f)    { #f, FIELD_INT,    offsetof(SGCSettings, f), sizeof(int) }
+#define FLOAT_FIELD(f)  { #f, FIELD_FLOAT,  offsetof(SGCSettings, f), sizeof(float) }
+#define STRING_FIELD(f) { #f, FIELD_STRING, offsetof(SGCSettings, f), sizeof(((SGCSettings *) 0)->f) }
 
 static const GameField fields[] =
 {
@@ -51,6 +55,7 @@ static const GameField fields[] =
 	INT_FIELD(crosshair),
 	INT_FIELD(AutoCrop),
 	INT_FIELD(AutoCropScale),
+	STRING_FIELD(Bezel),
 	// audio
 	INT_FIELD(MuteSound),
 	INT_FIELD(Interpolation),
@@ -74,18 +79,20 @@ static inline void *FieldIn(SGCSettings *s, const GameField &f)
 static void CopyFields(SGCSettings *dst, SGCSettings *src)
 {
 	for(unsigned int i = 0; i < FIELD_COUNT; i++)
-		memcpy(FieldIn(dst, fields[i]), FieldIn(src, fields[i]), fields[i].isFloat ? sizeof(float) : sizeof(int));
+		memcpy(FieldIn(dst, fields[i]), FieldIn(src, fields[i]), fields[i].size);
 }
 
 static void SwapFields(SGCSettings *a, SGCSettings *b)
 {
 	for(unsigned int i = 0; i < FIELD_COUNT; i++)
 	{
-		char tmp[sizeof(float) > sizeof(int) ? sizeof(float) : sizeof(int)];
-		const size_t size = fields[i].isFloat ? sizeof(float) : sizeof(int);
-		memcpy(tmp, FieldIn(a, fields[i]), size);
-		memcpy(FieldIn(a, fields[i]), FieldIn(b, fields[i]), size);
-		memcpy(FieldIn(b, fields[i]), tmp, size);
+		char *x = (char *) FieldIn(a, fields[i]), *y = (char *) FieldIn(b, fields[i]);
+		for(size_t j = 0; j < fields[i].size; j++)
+		{
+			const char tmp = x[j];
+			x[j] = y[j];
+			y[j] = tmp;
+		}
 	}
 }
 
@@ -107,7 +114,7 @@ static bool ReadGameFile(const char *path)
 	if(!file)
 		return false;
 
-	char line[128];
+	char line[256];
 	if(!fgets(line, sizeof(line), file) || strncmp(line, GAME_FILE_HEADER, strlen(GAME_FILE_HEADER)) != 0)
 	{
 		fclose(file);
@@ -124,7 +131,13 @@ static bool ReadGameFile(const char *path)
 		{
 			if(strcmp(line, fields[i].name) != 0)
 				continue;
-			if(fields[i].isFloat)
+			if(fields[i].type == FIELD_STRING)
+			{
+				char *value = eq + 1;
+				value[strcspn(value, "\r\n")] = 0;
+				snprintf((char *) FieldIn(&GCSettings, fields[i]), fields[i].size, "%s", value);
+			}
+			else if(fields[i].type == FIELD_FLOAT)
 			{
 				float v;
 				if(sscanf(eq + 1, "%f", &v) == 1)
@@ -160,7 +173,9 @@ void GameSettingsSave()
 	fprintf(file, "%s\n", GAME_FILE_HEADER);
 	for(unsigned int i = 0; i < FIELD_COUNT; i++)
 	{
-		if(fields[i].isFloat)
+		if(fields[i].type == FIELD_STRING)
+			fprintf(file, "%s=%s\n", fields[i].name, (char *) FieldIn(&GCSettings, fields[i]));
+		else if(fields[i].type == FIELD_FLOAT)
 			fprintf(file, "%s=%f\n", fields[i].name, *(float *) FieldIn(&GCSettings, fields[i]));
 		else
 			fprintf(file, "%s=%d\n", fields[i].name, *(int *) FieldIn(&GCSettings, fields[i]));

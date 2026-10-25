@@ -153,6 +153,7 @@ preparePrefsData ()
 	createXMLSetting("crosshair", "Show Crosshair", toStr(GCSettings.crosshair));
 	createXMLSetting("AutoCrop", "Auto Crop Black Borders", toStr(GCSettings.AutoCrop));
 	createXMLSetting("AutoCropScale", "Auto Crop Scaling", toStr(GCSettings.AutoCropScale));
+	createXMLSetting("Bezel", "Bezel", GCSettings.Bezel);
 	createXMLSetting("xshift", "Horizontal Video Shift", toStr(GCSettings.xshift));
 	createXMLSetting("yshift", "Vertical Video Shift", toStr(GCSettings.yshift));
 
@@ -349,6 +350,7 @@ decodePrefsData ()
 			loadXMLSetting(&GCSettings.crosshair, "crosshair");
 			loadXMLSetting(&GCSettings.AutoCrop, "AutoCrop");
 			loadXMLSetting(&GCSettings.AutoCropScale, "AutoCropScale");
+			loadXMLSetting(GCSettings.Bezel, "Bezel", sizeof(GCSettings.Bezel));
 			loadXMLSetting(&GCSettings.xshift, "xshift");
 			loadXMLSetting(&GCSettings.yshift, "yshift");
 
@@ -443,6 +445,9 @@ void FixInvalidSettings()
 		GCSettings.videomode = 0;
 	if(!(GCSettings.render >= 0 && GCSettings.render < 2))
 		GCSettings.render = 0;
+	GCSettings.Bezel[sizeof(GCSettings.Bezel) - 1] = 0;
+	if(strchr(GCSettings.Bezel, '/') || strchr(GCSettings.Bezel, '\\'))
+		GCSettings.Bezel[0] = 0; // a file name only
 }
 
 /****************************************************************************
@@ -793,6 +798,8 @@ bool LoadPrefs()
 		sprintf(dirPath, "%s%s", pathPrefix[GCSettings.LoadMethod], GCSettings.ArtworkFolder);
 		CreateDirectory(dirPath);
 		sprintf(dirPath, "%s%s", pathPrefix[GCSettings.LoadMethod], GCSettings.CheatFolder);
+		CreateDirectory(dirPath);
+		sprintf(dirPath, "%s%s/bezels", pathPrefix[GCSettings.LoadMethod], APPFOLDER);
 		CreateDirectory(dirPath);
 	}
 

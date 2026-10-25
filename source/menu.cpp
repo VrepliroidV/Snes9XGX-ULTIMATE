@@ -14,6 +14,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <strings.h>
 #include <sys/stat.h>
 
 #ifdef HW_RVL
@@ -3883,6 +3884,29 @@ static int MenuSettingsFastForward()
 	return menu;
 }
 
+// Bezel option: Off, Auto (the game's name), then each file.
+#define MAX_BEZELS 512
+
+static void NextBezel(char (*names)[BEZEL_NAME_MAX], int count)
+{
+	int i = -1; // Auto: the first file next
+	if (GCSettings.Bezel[0] == 0)
+	{
+		snprintf(GCSettings.Bezel, sizeof(GCSettings.Bezel), "%s", BEZEL_AUTO);
+		return;
+	}
+	if (strcmp(GCSettings.Bezel, BEZEL_AUTO) != 0)
+	{
+		for (i = 0; i < count && strcasecmp(names[i], GCSettings.Bezel) != 0; i++);
+		if (i == count)
+			i = count - 1; // not there any more: off next
+	}
+	if (i + 1 < count)
+		snprintf(GCSettings.Bezel, sizeof(GCSettings.Bezel), "%s", names[i + 1]);
+	else
+		GCSettings.Bezel[0] = 0;
+}
+
 static int MenuSettingsVideo()
 {
 	int menu = MENU_NONE;
@@ -3904,11 +3928,16 @@ static int MenuSettingsVideo()
 	sprintf(options.name[i++], "Show Crosshair");
 	sprintf(options.name[i++], "Auto Crop");
 	sprintf(options.name[i++], "Auto Crop Scaling");
+	sprintf(options.name[i++], "Bezel");
 	options.length = i;
 
 #ifdef HW_DOL
 	options.name[6][0] = 0; // disable filtering on GameCube
 #endif
+
+	// the PNG files in snes9xtx/bezels
+	char (*bezelNames)[BEZEL_NAME_MAX] = (char (*)[BEZEL_NAME_MAX]) malloc(MAX_BEZELS * BEZEL_NAME_MAX);
+	int bezelCount = bezelNames ? BezelList(bezelNames, MAX_BEZELS) : 0;
 
 	for(i=0; i < options.length; i++)
 		options.value[i][0] = 0;
@@ -4020,6 +4049,10 @@ static int MenuSettingsVideo()
 			case 12:
 				GCSettings.AutoCropScale = (GCSettings.AutoCropScale + 1) % AUTOCROP_SCALINGS;
 				break;
+
+			case 13:
+				NextBezel(bezelNames, bezelCount);
+				break;
 		}
 
 		if(ret >= 0 || firstRun)
@@ -4076,6 +4109,13 @@ static int MenuSettingsVideo()
 			else
 				sprintf (options.value[12], "Smooth (fill the frame)");
 
+			if (GCSettings.Bezel[0] == 0)
+				sprintf (options.value[13], "Off");
+			else if (strcmp(GCSettings.Bezel, BEZEL_AUTO) == 0)
+				sprintf (options.value[13], "Auto (game name)");
+			else
+				bezel_display_name(GCSettings.Bezel, options.value[13], 28);
+
 			optionBrowser.TriggerUpdate();
 		}
 
@@ -4088,6 +4128,7 @@ static int MenuSettingsVideo()
 	mainWindow->Remove(&optionBrowser);
 	mainWindow->Remove(&w);
 	mainWindow->Remove(&titleTxt);
+	free(bezelNames);
 	return menu;
 }
 

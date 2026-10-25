@@ -140,6 +140,7 @@ struct SGCSettings{
 	int		crosshair;
 	int		AutoCrop;	// AUTOCROP_OFF, AUTOCROP_FIT, AUTOCROP_STRETCH (utils/autocrop.h)
 	int		AutoCropScale;	// AUTOCROP_SCALE_SMOOTH, AUTOCROP_SCALE_INTEGER
+	char	Bezel[128];	// "" off, "<auto>" by the game's name, or a PNG in snes9xtx/bezels (utils/bezel.h)
 	int		aspect;
 	int		xshift;		// Video output shift
 	int		yshift;

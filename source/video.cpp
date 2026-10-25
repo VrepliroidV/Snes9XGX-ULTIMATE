@@ -19,6 +19,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <math.h>
+#include <sys/stat.h>
 #include <ogc/texconv.h>
 #include <ogc/machine/processor.h>
 
@@ -36,6 +37,7 @@
 #include "snes9x/ppu.h"
 #include "filebrowser.h"
 #include "utils/autocrop.h"
+#include "utils/bezel.h"
 
 extern void UpdatePlaybackRate(void);
 
@@ -131,6 +133,20 @@ static int sharpW = 0, sharpH = 0;       // enlarged size; 0 = draw directly
 static int sharpTexW = 0, sharpTexH = 0; // texture size, multiples of 4
 static bool sharpTexReady = false;
 extern int fscale; // texture scale of the video filter
+
+/*** Bezels (utils/bezel.h) ***
+ A PNG from snes9xtx/bezels covers the screen in the default rendering
+ (480i/480p, not 240p). The game fills its transparent window and the
+ bezel is drawn over it; a PNG without a window is a background, with the
+ game in front of it at its usual size. */
+#define BEZEL_FOLDER APPFOLDER "/bezels"
+#define BEZEL_WIDTH 640 // width the bezels are made for (the screen's with a window)
+static bezel_image bezel;
+static GXTexObj bezelTexObj;
+static char bezelPath[MAXPATHLEN]; // the file tried last
+static int bezelHeight = 0;        // and the screen height it was for
+static int quadCX = 0, quadCY = 0; // centre of the quad on screen (y up)
+static const int bezelDevices[] = { DEVICE_SD, DEVICE_USB, DEVICE_SD_SLOTA, DEVICE_SD_SLOTB, DEVICE_SD_PORT2 };
 
 static camera cam = {
 	{0.0F, 0.0F, 0.0F},
@@ -397,6 +413,116 @@ draw_square (Mtx v)
 }
 
 /****************************************************************************
+ * Bezels
+ ***************************************************************************/
+static bool BezelHole()
+{
+	return bezel.texture != NULL && bezel.hole_w > 0;
+}
+
+// Finds a bezel file on the devices (SD first).
+static bool BezelFind(const char *name, char *path)
+{
+	struct stat st;
+	for (unsigned int i = 0; i < sizeof(bezelDevices) / sizeof(bezelDevices[0]); i++)
+	{
+		snprintf(path, MAXPATHLEN, "%s%s/%s", pathPrefix[bezelDevices[i]], BEZEL_FOLDER, name);
+		if (stat(path, &st) == 0 && !S_ISDIR(st.st_mode))
+			return true;
+	}
+	path[0] = 0;
+	return false;
+}
+
+// The file of the bezel setting: Auto takes <game>.png, or else default.png.
+static bool BezelFile(char *path)
+{
+	path[0] = 0;
+	if (GCSettings.Bezel[0] == 0)
+		return false;
+	if (strcmp(GCSettings.Bezel, BEZEL_AUTO) != 0)
+		return BezelFind(GCSettings.Bezel, path);
+
+	char name[MAXJOLIET + 8];
+	if (Memory.ROMFilename[0])
+	{
+		snprintf(name, sizeof(name), "%s.png", Memory.ROMFilename);
+		if (BezelFind(name, path))
+			return true;
+	}
+	return BezelFind("default.png", path);
+}
+
+// Loads the bezel for the screen of rmode (NULL: no bezel), unless it was
+// tried already for it.
+static void BezelUpdate(GXRModeObj *rmode)
+{
+	char path[MAXPATHLEN];
+	if (!rmode || rmode->aa || !BezelFile(path))
+	{
+		bezel_free(&bezel);
+		bezelPath[0] = 0;
+		return;
+	}
+	if (strcmp(path, bezelPath) == 0 && bezelHeight == rmode->efbHeight)
+		return; // loaded already (or not a PNG)
+
+	snprintf(bezelPath, sizeof(bezelPath), "%s", path);
+	bezelHeight = rmode->efbHeight;
+	if (bezel_load(&bezel, path, BEZEL_WIDTH, rmode->efbHeight))
+		GX_InitTexObj(&bezelTexObj, bezel.texture, bezel.tex_width, bezel.tex_height, GX_TF_RGBA8, GX_CLAMP, GX_CLAMP, GX_FALSE);
+}
+
+// Draws the bezel over the whole screen, blended by its alpha.
+static void DrawBezel()
+{
+	Mtx m, mv;
+	const s16 left = -(vmode->fbWidth / 2), right = vmode->fbWidth - vmode->fbWidth / 2;
+	const s16 top = vmode->efbHeight / 2, bottom = vmode->efbHeight / 2 - vmode->efbHeight;
+	const f32 s1 = (f32) bezel.width / bezel.tex_width, t1 = (f32) bezel.height / bezel.tex_height;
+
+	GX_ClearVtxDesc ();
+	GX_SetVtxDesc (GX_VA_POS, GX_DIRECT);
+	GX_SetVtxDesc (GX_VA_TEX0, GX_DIRECT);
+	GX_SetVtxAttrFmt (GX_VTXFMT1, GX_VA_POS, GX_POS_XYZ, GX_S16, 0);
+	GX_SetVtxAttrFmt (GX_VTXFMT1, GX_VA_TEX0, GX_TEX_ST, GX_F32, 0);
+	GX_InvVtxCache ();
+	GX_SetBlendMode (GX_BM_BLEND, GX_BL_SRCALPHA, GX_BL_INVSRCALPHA, GX_LO_CLEAR);
+	GX_LoadTexObj (&bezelTexObj, GX_TEXMAP0);
+
+	guMtxIdentity (m);
+	guMtxTransApply (m, m, 0, 0, -100);
+	guMtxConcat (view, m, mv);
+	GX_LoadPosMtxImm (mv, GX_PNMTX0);
+
+	GX_Begin (GX_QUADS, GX_VTXFMT1, 4);
+	GX_Position3s16 (left, top, 0);
+	GX_TexCoord2f32 (0.0f, 0.0f);
+	GX_Position3s16 (right, top, 0);
+	GX_TexCoord2f32 (s1, 0.0f);
+	GX_Position3s16 (right, bottom, 0);
+	GX_TexCoord2f32 (s1, t1);
+	GX_Position3s16 (left, bottom, 0);
+	GX_TexCoord2f32 (0.0f, t1);
+	GX_End ();
+
+	GX_SetBlendMode (GX_BM_NONE, GX_BL_SRCALPHA, GX_BL_INVSRCALPHA, GX_LO_CLEAR);
+	draw_init (); // back to the game's quad
+}
+
+int BezelList(char (*names)[BEZEL_NAME_MAX], int max)
+{
+	char dir[MAXPATHLEN];
+	int count = 0;
+	for (unsigned int i = 0; i < sizeof(bezelDevices) / sizeof(bezelDevices[0]); i++)
+	{
+		snprintf(dir, sizeof(dir), "%s%s", pathPrefix[bezelDevices[i]], BEZEL_FOLDER);
+		count = bezel_list(dir, names, count, max);
+	}
+	return count;
+}
+
+/****************************************************************************
  * StopGX
  *
  * Stops GX (when exiting)
@@ -655,6 +781,7 @@ ResetVideo_Emu ()
 	if(i >= 0)
 	{
 		rmode = tvmodes[i];
+		BezelUpdate(NULL); // no bezel in 240p
 
 		// hack to fix video output for filters (only when actually filtering; h<=239, w<=256)
 		if (GCSettings.VideoFilter != FILTER_NONE && vheight <= 239 && vwidth <= 256)
@@ -678,8 +805,12 @@ ResetVideo_Emu ()
 	else
 	{
 		rmode = FindVideoMode();
-		
-		if (GCSettings.aspect)
+
+		// not for a screenshot taken in original rendering (see update_video)
+		BezelUpdate((GCSettings.render == 0 && oldRenderMode == -1) ? rmode : NULL);
+
+		// a bezel with a window is made for the whole width
+		if (GCSettings.aspect || BezelHole())
 			ResetFbWidth(640, rmode);
 		else
 			ResetFbWidth(512, rmode);
@@ -778,7 +909,7 @@ static int AutoCropLines()
 static void AutoCropView(f32 *u0, f32 *u1, f32 *v0, f32 *v1, f32 *xsize, f32 *ysize)
 {
 	f32 xroom = 1.0f, yroom = 1.0f;
-	if (vmode && quadX > 0 && quadY > 0)
+	if (vmode && quadX > 0 && quadY > 0 && !BezelHole()) // the window of a bezel is all the room
 	{
 		xroom = (f32) vmode->fbWidth / (2 * quadX);
 		yroom = (f32) vmode->efbHeight / (2 * quadY);
@@ -791,10 +922,11 @@ static void UpdateSharp(int width, int height)
 {
 	sharpW = sharpH = 0;
 
-	if (GCSettings.bilinear || autoCropMode == AUTOCROP_OFF || !vmode || vmode->aa)
+	if (GCSettings.bilinear || !vmode || vmode->aa)
 		return;
-	if (texS0 == 0.0f && texS1 == 1.0f && texT0 == 0.0f && texT1 == 1.0f)
-		return; // nothing cropped: the original scaling
+	if (!BezelHole() && (autoCropMode == AUTOCROP_OFF ||
+		(texS0 == 0.0f && texS1 == 1.0f && texT0 == 0.0f && texT1 == 1.0f)))
+		return; // nothing cropped: the original scaling (the window of a bezel is sharp too)
 
 	// visible part in texels (whole texels: the crop edges are whole pixels)
 	const int cw = (int) ((texS1 - texS0) * vwidth * fscale + 0.5f);
@@ -843,8 +975,8 @@ static void UpdateSharp(int width, int height)
 }
 
 // Draws the crop enlarged by whole numbers (nearest), then smoothed to the
-// quad. See UpdateSharp.
-static void DrawSharp()
+// quad (DrawSharpFinal). See UpdateSharp.
+static void DrawSharpEnlarge()
 {
 	Mtx44 p;
 
@@ -865,12 +997,17 @@ static void DrawSharp()
 	GX_PixModeSync ();
 	GX_InvalidateTexAll ();
 
-	// 2. back to the screen: smoothed (bilinear) to the size of the quad
+	// back to the whole screen
 	GX_SetCopyFilter (vmode->aa, vmode->sample_pattern, (vmode->xfbMode == VI_XFBMODE_SF) ? GX_FALSE : GX_TRUE, vmode->vfilter);
 	GX_SetViewport (0, 0, vmode->fbWidth, vmode->efbHeight, 0, 1);
 	GX_SetScissor (0, 0, vmode->fbWidth, vmode->efbHeight);
 	guOrtho (p, vmode->efbHeight / 2, -(vmode->efbHeight / 2), -(vmode->fbWidth / 2), vmode->fbWidth / 2, 100, 1000);
 	GX_LoadProjectionMtx (p, GX_ORTHOGRAPHIC);
+}
+
+static void DrawSharpFinal()
+{
+	// 2. smoothed (bilinear) to the size of the quad
 	GX_SetArray (GX_VA_POS, square, 3 * sizeof (s16));
 	GX_LoadTexObj (&sharpTexObj, GX_TEXMAP0);
 	draw_square_uv (view, 0.0f, 0.0f, (f32) sharpW / sharpTexW, (f32) sharpH / sharpTexH);
@@ -908,10 +1045,10 @@ static void UpdateQuad()
 		}
 	}
 
-	square[6] = square[3]  = right + GCSettings.xshift;
-	square[0] = square[9]  = left + GCSettings.xshift;
-	square[4] = square[1]  = top - GCSettings.yshift;
-	square[7] = square[10] = bottom - GCSettings.yshift;
+	square[6] = square[3]  = right + quadCX;
+	square[0] = square[9]  = left + quadCX;
+	square[4] = square[1]  = top + quadCY;
+	square[7] = square[10] = bottom + quadCY;
 	DCFlushRange (square, 32); // update memory BEFORE the GPU accesses it!
 	GX_InvVtxCache ();
 
@@ -921,7 +1058,7 @@ static void UpdateQuad()
 	texT1 = v1;
 	autoCropDirty = false;
 
-	if (autoCropScale == AUTOCROP_SCALE_INTEGER)
+	if (cropped && autoCropScale == AUTOCROP_SCALE_INTEGER)
 		sharpW = sharpH = 0; // already even
 	else
 		UpdateSharp(right - left, top - bottom);
@@ -988,7 +1125,7 @@ void AutoCropMapPointer(float fx, float fy, int *x, int *y)
 {
 	f32 u0, u1, v0, v1, xsize, ysize;
 	AutoCropView(&u0, &u1, &v0, &v1, &xsize, &ysize);
-	if (!vmode || (u0 == 0.0f && u1 == 1.0f && v0 == 0.0f && v1 == 1.0f))
+	if (!vmode || (!BezelHole() && u0 == 0.0f && u1 == 1.0f && v0 == 0.0f && v1 == 1.0f))
 	{
 		// Nothing cropped: the whole screen is the SNES picture, as before.
 		*x = (int) (fx * 256);
@@ -1080,8 +1217,21 @@ update_video (int width, int height)
 		xscale *= GCSettings.zoomHor;
 		yscale *= GCSettings.zoomVert;
 
-		quadX = xscale;
-		quadY = yscale;
+		if (BezelHole())
+		{
+			// the window of the bezel, whatever the zoom and position
+			quadX = (bezel.hole_w + 1) / 2;
+			quadY = (bezel.hole_h + 1) / 2;
+			quadCX = bezel.hole_x + quadX - vmode->fbWidth / 2;
+			quadCY = vmode->efbHeight / 2 - bezel.hole_y - quadY;
+		}
+		else
+		{
+			quadX = xscale;
+			quadY = yscale;
+			quadCX = GCSettings.xshift;
+			quadCY = -GCSettings.yshift;
+		}
 		UpdateQuad(); // the whole frame, or its auto crop
     	draw_init ();
 
@@ -1126,15 +1276,24 @@ update_video (int width, int height)
 	DCFlushRange (texturemem, TEXTUREMEM_SIZE);	// update the texture memory
 	GX_InvalidateTexAll ();
 
+	// the enlarged picture uses a corner of the EFB first, so it comes before
+	// a bezel behind the game
+	const bool bezelOn = bezel.texture != NULL;
+	if (sharpW > 0)
+		DrawSharpEnlarge ();
+	if (bezelOn && !BezelHole())
+		DrawBezel ();	// background
 	if (sharpW > 0)
 	{
-		DrawSharp ();	// auto crop, enlarged sharply
+		DrawSharpFinal ();	// auto crop or bezel window, enlarged sharply
 	}
 	else
 	{
 		GX_LoadTexObj (&texobj, GX_TEXMAP0);
 		draw_square (view);		// draw the quad
 	}
+	if (bezelOn && BezelHole())
+		DrawBezel ();	// around the game, over its edges
 
 	GX_DrawDone ();
 

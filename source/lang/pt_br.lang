@@ -780,3 +780,9 @@ msgstr "A partir de agora, as configurações de vídeo, som e emulação que vo
 
 msgid "Use the global settings for this game again?"
 msgstr "Voltar a usar as configurações gerais neste jogo?"
+
+msgid "Bezel"
+msgstr "Moldura"
+
+msgid "Auto (game name)"
+msgstr "Automática (nome do jogo)"
