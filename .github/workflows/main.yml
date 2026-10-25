@@ -59,9 +59,11 @@ jobs:
         mkdir -p dist/Snes9xTX/snes9xtx/roms
         mkdir dist/Snes9xTX/snes9xtx/cheats
         mkdir dist/Snes9xTX/snes9xtx/saves
+        mkdir dist/Snes9xTX/snes9xtx/bezels
         touch dist/Snes9xTX/snes9xtx/roms/romsdir
         touch dist/Snes9xTX/snes9xtx/cheats/cheatsdir
         touch dist/Snes9xTX/snes9xtx/saves/savesdir
+        touch dist/Snes9xTX/snes9xtx/bezels/bezelsdir
         cp hbc/* dist/Snes9xTX/apps/snes9xtx/
         cp LICENSE dist/Snes9xTX/apps/snes9xtx/
         cp executables/snes9xtx-wii.dol dist/Snes9xTX/apps/snes9xtx/boot.dol
