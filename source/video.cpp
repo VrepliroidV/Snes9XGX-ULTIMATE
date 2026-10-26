@@ -219,6 +219,12 @@ static void DiagPatch(int row, int col, u8 r, u8 g, u8 b, f32 s, f32 t)
 
 static void DiagDraw()
 {
+	Mtx m, mv;
+	guMtxIdentity (m);
+	guMtxTransApply (m, m, 0, 0, -100); // in front of the camera, as the game's quad
+	guMtxConcat (view, m, mv);
+	GX_LoadPosMtxImm (mv, GX_PNMTX0);
+
 	GX_ClearVtxDesc ();
 	GX_SetVtxDesc (GX_VA_POS, GX_DIRECT);
 	GX_SetVtxDesc (GX_VA_CLR0, GX_DIRECT);
@@ -254,7 +260,6 @@ static void DiagDraw()
 	for (int c = 0; c < 4; c++) // 4 RGBA8 made here, modulated by white
 		DiagPatch(3, c, 255, 255, 255, (c * 4 + 2) / 16.0f, 0.5f);
 
-	GX_SetChanCtrl (GX_COLOR0A0, GX_DISABLE, GX_SRC_REG, GX_SRC_REG, GX_LIGHTNULL, GX_DF_NONE, GX_AF_NONE);
 	draw_init (); // back to the game's quad (no colour channel, REPLACE)
 
 	GFX.InfoString = diagText; // under the frame rate (Show Frame Rate on)
