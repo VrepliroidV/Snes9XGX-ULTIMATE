@@ -19,6 +19,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <math.h>
+#include <strings.h>
 #include <sys/stat.h>
 #include <ogc/texconv.h>
 #include <ogc/machine/processor.h>
@@ -151,6 +152,114 @@ static int quadCX = 0, quadCY = 0; // centre of the quad on screen (y up)
 static f32 bezelXScale = 1.0f;     // game width with a background bezel / without
 static u16 viWidthSet = 0;         // VI width the current mode was set up with
 static const int bezelDevices[] = { DEVICE_SD, DEVICE_USB, DEVICE_SD_SLOTA, DEVICE_SD_SLOTB, DEVICE_SD_PORT2 };
+
+/*** Bezel colour test (temporary): when the bezel is teste-cores.png, rows
+ of grey patches (12, 24, 48, 96) are drawn in different ways over the top of
+ the game window, and the bezel's own texels are shown under the frame rate:
+  1 vertex colour            2 RGBA8 texture made here (REPLACE)
+  3 RGB565 texture made here 4 RGBA8 texture made here (MODULATE, white)
+  5 vertex colour = texels of the bezel read back by the CPU
+  6 the bezel texture itself, sampled at the middle of its grey swatches ***/
+static inline void draw_init();
+static bool bezelDiag = false;
+static u8 diagRGBA8[16 * 4 * 4] ATTRIBUTE_ALIGN(32);  // 16x4 texels, 4 tiles
+static u8 diagRGB565[16 * 4 * 2] ATTRIBUTE_ALIGN(32);
+static GXTexObj diagTexRGBA8, diagTexRGB565;
+static u8 diagRead[4][4];                              // R, G, B, A
+static f32 diagS[4], diagT[4];                         // swatch centres in the bezel
+static char diagText[160];
+static const u8 diagGrey[4] = { 12, 24, 48, 96 };
+
+static void DiagPrepare()
+{
+	for (int c = 0; c < 4; c++)
+	{
+		const u8 g = diagGrey[c];
+		for (int p = 0; p < 16; p++)
+		{
+			u8 *t = diagRGBA8 + c * 64 + p * 2;
+			t[0] = 255; t[1] = g; t[32] = g; t[33] = g;
+			const u16 v = ((g >> 3) << 11) | ((g >> 2) << 5) | (g >> 3);
+			diagRGB565[c * 32 + p * 2] = v >> 8;
+			diagRGB565[c * 32 + p * 2 + 1] = v & 0xff;
+		}
+		// swatch centre of teste-cores.png (left column, rows 1 to 4), in the bezel
+		const int x = 40, y = (int) ((20 + (c + 1) * 148 + 68) * bezel.height / 1080.0f);
+		const int tile = (y >> 2) * (bezel.tex_width >> 2) + (x >> 2), q = ((y & 3) << 2) + (x & 3);
+		const u8 *b = (const u8 *) bezel.texture + tile * 64 + q * 2;
+		diagRead[c][0] = b[1]; diagRead[c][1] = b[32]; diagRead[c][2] = b[33]; diagRead[c][3] = b[0];
+		diagS[c] = (x + 0.5f) / bezel.tex_width;
+		diagT[c] = (y + 0.5f) / bezel.tex_height;
+	}
+	DCFlushRange(diagRGBA8, sizeof(diagRGBA8));
+	DCFlushRange(diagRGB565, sizeof(diagRGB565));
+	GX_InitTexObj(&diagTexRGBA8, diagRGBA8, 16, 4, GX_TF_RGBA8, GX_CLAMP, GX_CLAMP, GX_FALSE);
+	GX_InitTexObj(&diagTexRGB565, diagRGB565, 16, 4, GX_TF_RGB565, GX_CLAMP, GX_CLAMP, GX_FALSE);
+	GX_InitTexObjFilterMode(&diagTexRGBA8, GX_NEAR, GX_NEAR);
+	GX_InitTexObjFilterMode(&diagTexRGB565, GX_NEAR, GX_NEAR);
+	snprintf(diagText, sizeof(diagText), "BZ %d:%d,%d,%d,%d %d:%d,%d,%d,%d %d:%d,%d,%d,%d %d:%d,%d,%d,%d",
+		diagGrey[0], diagRead[0][0], diagRead[0][1], diagRead[0][2], diagRead[0][3],
+		diagGrey[1], diagRead[1][0], diagRead[1][1], diagRead[1][2], diagRead[1][3],
+		diagGrey[2], diagRead[2][0], diagRead[2][1], diagRead[2][2], diagRead[2][3],
+		diagGrey[3], diagRead[3][0], diagRead[3][1], diagRead[3][2], diagRead[3][3]);
+}
+
+// one patch: row 0..5, column 0..3 (over the top of the game window)
+static void DiagPatch(int row, int col, u8 r, u8 g, u8 b, f32 s, f32 t)
+{
+	const s16 x0 = -200 + col * 100, x1 = x0 + 90;
+	const s16 y0 = 230 - row * 40, y1 = y0 - 34; // y up
+	GX_Begin (GX_QUADS, GX_VTXFMT3, 4);
+	GX_Position3s16 (x0, y0, 0); GX_Color4u8 (r, g, b, 255); GX_TexCoord2f32 (s, t);
+	GX_Position3s16 (x1, y0, 0); GX_Color4u8 (r, g, b, 255); GX_TexCoord2f32 (s, t);
+	GX_Position3s16 (x1, y1, 0); GX_Color4u8 (r, g, b, 255); GX_TexCoord2f32 (s, t);
+	GX_Position3s16 (x0, y1, 0); GX_Color4u8 (r, g, b, 255); GX_TexCoord2f32 (s, t);
+	GX_End ();
+}
+
+static void DiagDraw()
+{
+	GX_ClearVtxDesc ();
+	GX_SetVtxDesc (GX_VA_POS, GX_DIRECT);
+	GX_SetVtxDesc (GX_VA_CLR0, GX_DIRECT);
+	GX_SetVtxDesc (GX_VA_TEX0, GX_DIRECT);
+	GX_SetVtxAttrFmt (GX_VTXFMT3, GX_VA_POS, GX_POS_XYZ, GX_S16, 0);
+	GX_SetVtxAttrFmt (GX_VTXFMT3, GX_VA_CLR0, GX_CLR_RGBA, GX_RGBA8, 0);
+	GX_SetVtxAttrFmt (GX_VTXFMT3, GX_VA_TEX0, GX_TEX_ST, GX_F32, 0);
+	GX_InvVtxCache ();
+	GX_SetBlendMode (GX_BM_NONE, GX_BL_SRCALPHA, GX_BL_INVSRCALPHA, GX_LO_CLEAR);
+	GX_SetNumChans (1);
+	GX_SetChanCtrl (GX_COLOR0A0, GX_DISABLE, GX_SRC_REG, GX_SRC_VTX, GX_LIGHTNULL, GX_DF_NONE, GX_AF_NONE);
+	GX_SetTevOrder (GX_TEVSTAGE0, GX_TEXCOORD0, GX_TEXMAP0, GX_COLOR0A0);
+
+	GX_LoadTexObj (&diagTexRGBA8, GX_TEXMAP0);
+	GX_SetTevOp (GX_TEVSTAGE0, GX_PASSCLR);
+	for (int c = 0; c < 4; c++) // 1 vertex colour
+		DiagPatch(0, c, diagGrey[c], diagGrey[c], diagGrey[c], 0, 0);
+	for (int c = 0; c < 4; c++) // 5 texels read back
+		DiagPatch(4, c, diagRead[c][0], diagRead[c][1], diagRead[c][2], 0, 0);
+
+	GX_SetTevOp (GX_TEVSTAGE0, GX_REPLACE);
+	for (int c = 0; c < 4; c++) // 2 RGBA8 made here
+		DiagPatch(1, c, 255, 255, 255, (c * 4 + 2) / 16.0f, 0.5f);
+	GX_LoadTexObj (&diagTexRGB565, GX_TEXMAP0);
+	for (int c = 0; c < 4; c++) // 3 RGB565 made here
+		DiagPatch(2, c, 255, 255, 255, (c * 4 + 2) / 16.0f, 0.5f);
+	GX_LoadTexObj (&bezelTexObj, GX_TEXMAP0);
+	for (int c = 0; c < 4; c++) // 6 the bezel
+		DiagPatch(5, c, 255, 255, 255, diagS[c], diagT[c]);
+
+	GX_LoadTexObj (&diagTexRGBA8, GX_TEXMAP0);
+	GX_SetTevOp (GX_TEVSTAGE0, GX_MODULATE);
+	for (int c = 0; c < 4; c++) // 4 RGBA8 made here, modulated by white
+		DiagPatch(3, c, 255, 255, 255, (c * 4 + 2) / 16.0f, 0.5f);
+
+	GX_SetChanCtrl (GX_COLOR0A0, GX_DISABLE, GX_SRC_REG, GX_SRC_REG, GX_LIGHTNULL, GX_DF_NONE, GX_AF_NONE);
+	draw_init (); // back to the game's quad (no colour channel, REPLACE)
+
+	GFX.InfoString = diagText; // under the frame rate (Show Frame Rate on)
+	GFX.InfoStringTimeout = 2;
+}
 
 static camera cam = {
 	{0.0F, 0.0F, 0.0F},
@@ -485,10 +594,19 @@ void BezelPrepare()
 	{
 		bezel_free(&bezel);
 		bezelPath[0] = 0;
+		bezelDiag = false;
 		return;
 	}
+	const char *base = strrchr(path, '/');
+	bezelDiag = (base && strcasecmp(base + 1, "teste-cores.png") == 0);
 	if (strcmp(path, bezelPath) == 0 && bezelHeight == rmode->efbHeight)
+	{
+		if (bezelDiag && bezel.texture)
+			DiagPrepare();
+		else
+			bezelDiag = false;
 		return; // loaded already (or not a PNG)
+	}
 
 	snprintf(bezelPath, sizeof(bezelPath), "%s", path);
 	bezelHeight = rmode->efbHeight;
@@ -497,6 +615,10 @@ void BezelPrepare()
 		bezel_load(&bezel, path, BEZEL_WIDTH, rmode->efbHeight);
 	if (loaded)
 		GX_InitTexObj(&bezelTexObj, bezel.texture, bezel.tex_width, bezel.tex_height, GX_TF_RGBA8, GX_CLAMP, GX_CLAMP, GX_FALSE);
+	if (loaded && bezelDiag)
+		DiagPrepare();
+	else
+		bezelDiag = false;
 }
 
 // Draws the bezel over the whole screen, blended by its alpha.
@@ -535,6 +657,8 @@ static void DrawBezel()
 
 	GX_SetBlendMode (GX_BM_NONE, GX_BL_SRCALPHA, GX_BL_INVSRCALPHA, GX_LO_CLEAR);
 	draw_init (); // back to the game's quad
+	if (bezelDiag)
+		DiagDraw();
 }
 
 int BezelList(char (*names)[BEZEL_NAME_MAX], int max)
