@@ -1,11 +1,24 @@
-Snes9x TX
+Snes9x GX ULTIMATE
 ===================
 
-Snes9x TX is a fork of Snes9x GX: https://github.com/dborth/snes9xgx
+Snes9x GX ULTIMATE (VrepliroidV) is based on Snes9x TX 1.1.3 by Tanooki:
+https://github.com/saulfabregwiivc/Snes9xTX
+Snes9x TX is a fork of Snes9x GX by Tantric: https://github.com/dborth/snes9xgx
 (Under GPL License)
 
 Update History
 --------------
+
+---Snes9x GX ULTIMATE 1.0.0 (VrepliroidV)---
+---October 26 2026---
+
+- New name and its own folders: the app is in apps/snes9xgxultimate and
+  its roms, saves, cheats, bezels and settings in snes9xgxultimate/ (on the
+  SD card or USB drive), so it can be installed next to Snes9x TX or
+  Snes9x GX. The folders of those are left alone
+- Everything of Snes9x TX 1.1.3-usb.3 below: PNG bezels, automatic CPU
+  overclock, per-game settings, Auto Crop, cheats typed in the menu, USB
+  controllers, region options
 
 ---Snes9x TX 1.1.3-usb.3 (VrepliroidV)---
 ---October 25 2026---

@@ -891,16 +891,16 @@ size_t LoadFont(char * filepath)
 	return loadSize;
 }
 
-// Menu music is not built in: Snes9x TX plays bg_music.ogg from the app folder
-// (apps/snes9xtx). The data folder (sd:/snes9xtx or usb:/snes9xtx) is also
-// checked, since both places are called "the snes9xtx folder".
+// Menu music is not built in: bg_music.ogg is played from the app folder
+// (apps/<APPFOLDER>). The data folder (sd:/<APPFOLDER> or usb:/<APPFOLDER>) is
+// also checked, since both places are called "the emulator's folder".
 void LoadBgMusic()
 {
 	if(bg_music)
 		return; // already loaded
 
 	char filepath[MAXPATHLEN];
-	const char *places[3] = { appPath, "sd:/snes9xtx", "usb:/snes9xtx" };
+	const char *places[3] = { appPath, "sd:/" APPFOLDER, "usb:/" APPFOLDER };
 	FILE *file = NULL;
 
 	for(int i = 0; i < 3 && !file; i++) {

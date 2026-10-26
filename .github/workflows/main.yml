@@ -1,4 +1,4 @@
-name: Snes9x TX Build
+name: Snes9x GX ULTIMATE Build
 
 on:
   push:
@@ -9,13 +9,13 @@ on:
 
 jobs:
   build:
-    name: Build Snes9x TX
+    name: Build Snes9x GX ULTIMATE
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
         image: ["Wii", "GameCube"]
-    # same devkitPPC as the official Snes9x TX 1.1.3 release (January 2023)
+    # same devkitPPC as the official Snes9x TX 1.1.3 release (January 2023), which this is based on
     container: devkitpro/devkitppc:20230110
  
     steps:
@@ -39,7 +39,7 @@ jobs:
       if: ${{ matrix.image == 'Wii' }}
       shell: bash
       run: |
-        elf=executables/snes9xtx-wii.elf
+        elf=executables/snes9xgxultimate-wii.elf
         nm=/opt/devkitpro/devkitPPC/bin/powerpc-eabi-nm
         end=$($nm "$elf" | awk '($3 == "_end" || $3 == "__bss_end") && !e { e = $1 } END { print e }')
         sizes=$(/opt/devkitpro/devkitPPC/bin/powerpc-eabi-size "$elf" | awk 'END { print }')
@@ -50,31 +50,31 @@ jobs:
     - name: Resolve crash addresses
       if: ${{ matrix.image == 'Wii' && hashFiles('crash-addresses.txt') != '' }}
       shell: bash
-      run: bash .github/resolve-crash.sh executables/snes9xtx-wii.elf crash-addresses.txt
+      run: bash .github/resolve-crash.sh executables/snes9xgxultimate-wii.elf crash-addresses.txt
 
     - name: Copy Wii artifact
       if: ${{ matrix.image == 'Wii' }}
       run: | 
-        mkdir -p dist/Snes9xTX/apps/snes9xtx
-        mkdir -p dist/Snes9xTX/snes9xtx/roms
-        mkdir dist/Snes9xTX/snes9xtx/cheats
-        mkdir dist/Snes9xTX/snes9xtx/saves
-        mkdir dist/Snes9xTX/snes9xtx/bezels
-        touch dist/Snes9xTX/snes9xtx/roms/romsdir
-        touch dist/Snes9xTX/snes9xtx/cheats/cheatsdir
-        touch dist/Snes9xTX/snes9xtx/saves/savesdir
-        touch dist/Snes9xTX/snes9xtx/bezels/bezelsdir
-        cp hbc/* dist/Snes9xTX/apps/snes9xtx/
-        cp LICENSE dist/Snes9xTX/apps/snes9xtx/
-        cp executables/snes9xtx-wii.dol dist/Snes9xTX/apps/snes9xtx/boot.dol
+        mkdir -p dist/Snes9xGXUltimate/apps/snes9xgxultimate
+        mkdir -p dist/Snes9xGXUltimate/snes9xgxultimate/roms
+        mkdir dist/Snes9xGXUltimate/snes9xgxultimate/cheats
+        mkdir dist/Snes9xGXUltimate/snes9xgxultimate/saves
+        mkdir dist/Snes9xGXUltimate/snes9xgxultimate/bezels
+        touch dist/Snes9xGXUltimate/snes9xgxultimate/roms/romsdir
+        touch dist/Snes9xGXUltimate/snes9xgxultimate/cheats/cheatsdir
+        touch dist/Snes9xGXUltimate/snes9xgxultimate/saves/savesdir
+        touch dist/Snes9xGXUltimate/snes9xgxultimate/bezels/bezelsdir
+        cp hbc/* dist/Snes9xGXUltimate/apps/snes9xgxultimate/
+        cp LICENSE dist/Snes9xGXUltimate/apps/snes9xgxultimate/
+        cp executables/snes9xgxultimate-wii.dol dist/Snes9xGXUltimate/apps/snes9xgxultimate/boot.dol
 
     - name: Upload Wii artifacts
       uses: actions/upload-artifact@v4
       if: ${{ matrix.image == 'Wii' }}
       with: 
-        name: Snes9xTX
+        name: Snes9xGXUltimate
         path: |
-         dist/Snes9xTX/
+         dist/Snes9xGXUltimate/
     
     - name: Build GameCube
       if: ${{ matrix.image == 'GameCube' }}
@@ -90,18 +90,18 @@ jobs:
     - name: Copy GameCube artifact
       if: ${{ matrix.image == 'GameCube' }}
       run: | 
-        mkdir -p dist/Snes9xTX-GameCube
-        cp executables/snes9xtx-gc.dol LICENSE dist/Snes9xTX-GameCube/
+        mkdir -p dist/Snes9xGXUltimate-GameCube
+        cp executables/snes9xgxultimate-gc.dol LICENSE dist/Snes9xGXUltimate-GameCube/
     
     - name: Upload GameCube artifact
       uses: actions/upload-artifact@v4
       if: ${{ matrix.image == 'GameCube' }}
       with: 
-        name: Snes9xTX-GameCube
+        name: Snes9xGXUltimate-GameCube
         path: |
-         dist/Snes9xTX-GameCube/
+         dist/Snes9xGXUltimate-GameCube/
 
-  # Publishing a release on GitHub (for example tag v1.1.3-usb.2) builds it and
+  # Publishing a release on GitHub (for example tag v1.0.0) builds it and
   # attaches both builds as .zip files. If the release text is empty, it is
   # filled from .github/RELEASE_NOTES.md.
   release:
@@ -124,9 +124,9 @@ jobs:
         GH_REPO: ${{ github.repository }}
         TAG: ${{ github.event.release.tag_name }}
       run: |
-        (cd artifacts/Snes9xTX && zip -r -X "$GITHUB_WORKSPACE/Snes9xTX-Wii.zip" .)
-        (cd artifacts/Snes9xTX-GameCube && zip -r -X "$GITHUB_WORKSPACE/Snes9xTX-GameCube.zip" .)
+        (cd artifacts/Snes9xGXUltimate && zip -r -X "$GITHUB_WORKSPACE/Snes9xGXUltimate-Wii.zip" .)
+        (cd artifacts/Snes9xGXUltimate-GameCube && zip -r -X "$GITHUB_WORKSPACE/Snes9xGXUltimate-GameCube.zip" .)
         if [ -z "$(gh release view "$TAG" --json body --jq .body)" ]; then
           gh release edit "$TAG" --notes-file .github/RELEASE_NOTES.md
         fi
-        gh release upload "$TAG" Snes9xTX-Wii.zip Snes9xTX-GameCube.zip --clobber
+        gh release upload "$TAG" Snes9xGXUltimate-Wii.zip Snes9xGXUltimate-GameCube.zip --clobber

@@ -21,9 +21,9 @@
 #include "filelist.h"
 #include "utils/autocrop.h"
 
-#define APPNAME 			"Snes9x TX"
-#define APPVERSION 			"1.1.3"
-#define APPFOLDER 			"snes9xtx"
+#define APPNAME 			"Snes9x GX ULTIMATE"
+#define APPVERSION 			"1.0.0" // based on Snes9x TX 1.1.3
+#define APPFOLDER 			"snes9xgxultimate"
 #define PREF_FILE_NAME		"settings.xml"
 
 #define MAXPATHLEN 1024
@@ -140,7 +140,7 @@ struct SGCSettings{
 	int		crosshair;
 	int		AutoCrop;	// AUTOCROP_OFF, AUTOCROP_FIT, AUTOCROP_STRETCH (utils/autocrop.h)
 	int		AutoCropScale;	// AUTOCROP_SCALE_SMOOTH, AUTOCROP_SCALE_INTEGER
-	char	Bezel[128];	// "" off, "<auto>" by the game's name, or a PNG in snes9xtx/bezels (utils/bezel.h)
+	char	Bezel[128];	// "" off, "<auto>" by the game's name, or a PNG in <APPFOLDER>/bezels (utils/bezel.h)
 	int		aspect;
 	int		xshift;		// Video output shift
 	int		yshift;
@@ -201,7 +201,7 @@ void ApplyRegionSetting();
 void ApplyEmulationSettings();
 void ApplyCpuOverclock();
 
-// Start-up markers in the USB log (sd:/snes9xtx/xinput_usb.log), for the
+// Start-up markers in the USB log (sd:/<APPFOLDER>/xinput_usb.log), for the
 // crash that happens when a USB device connects while the menu opens.
 #ifdef HW_RVL
 #include "utils/xinput_usb.h"

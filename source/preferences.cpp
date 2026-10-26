@@ -756,39 +756,14 @@ bool LoadPrefs()
 		FixInvalidSettings();
 	}
 	
-	// rename snes9x to snes9xtx
+	// Snes9x GX ULTIMATE keeps its own folder (APPFOLDER) and leaves the
+	// folders of Snes9x GX (snes9x) and Snes9x TX (snes9xtx) alone, so the
+	// folder renaming of Snes9x TX is not done here.
 	if(GCSettings.LoadMethod == DEVICE_SD)
-	{
 		sdMounted = ChangeInterface(DEVICE_SD, NOTSILENT);
-		if(sdMounted && opendir("sd:/snes9x"))
-			rename("sd:/snes9x", "sd:/snes9xtx");
-	}
 	else if(GCSettings.LoadMethod == DEVICE_USB)
-	{
 		usbMounted = ChangeInterface(DEVICE_USB, NOTSILENT);
-		if(usbMounted && opendir("usb:/snes9x"))
-			rename("usb:/snes9x", "usb:/snes9xtx");	
-	}
 
-	// update folder locations
-	if(strcmp(GCSettings.LoadFolder, "snes9x/roms") == 0)
-		sprintf(GCSettings.LoadFolder, "snes9xtx/roms");
-	
-	if(strcmp(GCSettings.SaveFolder, "snes9x/saves") == 0)
-		sprintf(GCSettings.SaveFolder, "snes9xtx/saves");
-	
-	if(strcmp(GCSettings.CheatFolder, "snes9x/cheats") == 0)
-		sprintf(GCSettings.CheatFolder, "snes9xtx/cheats");
-		
-	if(strcmp(GCSettings.ScreenshotsFolder, "snes9x/screenshots") == 0)
-		sprintf(GCSettings.ScreenshotsFolder, "snes9xtx/screenshots");
-
-	if(strcmp(GCSettings.CoverFolder, "snes9x/covers") == 0)
-		sprintf(GCSettings.CoverFolder, "snes9xtx/covers");
-	
-	if(strcmp(GCSettings.ArtworkFolder, "snes9x/artwork") == 0)
-		sprintf(GCSettings.ArtworkFolder, "snes9xtx/artwork");
-	
 	// attempt to create directories if they don't exist
 	if((GCSettings.LoadMethod == DEVICE_SD && sdMounted) || (GCSettings.LoadMethod == DEVICE_USB && usbMounted) ) {
 		char dirPath[MAXPATHLEN];

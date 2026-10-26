@@ -136,7 +136,7 @@ static bool sharpTexReady = false;
 extern int fscale; // texture scale of the video filter
 
 /*** Bezels (utils/bezel.h) ***
- A PNG from snes9xtx/bezels covers the screen in the default rendering
+ A PNG from <APPFOLDER>/bezels covers the screen in the default rendering
  (480i/480p, not 240p). The game fills its transparent window and the
  bezel is drawn over it; a PNG without a window is a background, with the
  game in front of it at its usual size. */

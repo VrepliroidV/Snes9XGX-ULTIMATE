@@ -852,7 +852,7 @@ static void WindowCredits(void * ptr)
 	creditsBoxImg.SetAlignment(ALIGN_CENTRE, ALIGN_MIDDLE);
 	creditsWindowBox.Append(&creditsBoxImg);
 
-	int numEntries = 26;
+	int numEntries = 28;
 	GuiText * txt[numEntries];
 
 	txt[i] = new GuiText("Credits", 26, (GXColor){255, 255, 255, 255});
@@ -860,7 +860,11 @@ static void WindowCredits(void * ptr)
 
 	GuiText::SetPresets(20, (GXColor){0, 0, 0, 255}, 0, FTGX_JUSTIFY_LEFT | FTGX_ALIGN_TOP, ALIGN_LEFT, ALIGN_TOP);
 
-	txt[i] = new GuiText("Coding");
+	txt[i] = new GuiText("Snes9x GX ULTIMATE");
+	txt[i]->SetPosition(60,y); i++;
+	txt[i] = new GuiText("VrepliroidV");
+	txt[i]->SetPosition(350,y); i++; y+=24;
+	txt[i] = new GuiText("Snes9x TX");
 	txt[i]->SetPosition(60,y); i++;
 	txt[i] = new GuiText("Tanooki");
 	txt[i]->SetPosition(350,y); i++; y+=24;
@@ -3940,7 +3944,7 @@ static int MenuSettingsVideo()
 	options.name[6][0] = 0; // disable filtering on GameCube
 #endif
 
-	// the PNG files in snes9xtx/bezels
+	// the PNG files in <APPFOLDER>/bezels
 	char (*bezelNames)[BEZEL_NAME_MAX] = (char (*)[BEZEL_NAME_MAX]) malloc(MAX_BEZELS * BEZEL_NAME_MAX);
 	int bezelCount = bezelNames ? BezelList(bezelNames, MAX_BEZELS) : 0;
 
