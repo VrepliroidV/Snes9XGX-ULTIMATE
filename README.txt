@@ -19,6 +19,8 @@ Update History
 - Everything of Snes9x TX 1.1.3-usb.3 below: PNG bezels, automatic CPU
   overclock, per-game settings, Auto Crop, cheats typed in the menu, USB
   controllers, region options
+- New logo and Homebrew Channel icon
+- Downloads: https://github.com/VrepliroidV/Snes9XGX-ULTIMATE/releases
 
 ---Snes9x TX 1.1.3-usb.3 (VrepliroidV)---
 ---October 25 2026---
