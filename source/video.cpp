@@ -510,8 +510,9 @@ static void DrawBezel()
 	GX_ClearVtxDesc ();
 	GX_SetVtxDesc (GX_VA_POS, GX_DIRECT);
 	GX_SetVtxDesc (GX_VA_TEX0, GX_DIRECT);
-	GX_SetVtxAttrFmt (GX_VTXFMT1, GX_VA_POS, GX_POS_XYZ, GX_S16, 0);
-	GX_SetVtxAttrFmt (GX_VTXFMT1, GX_VA_TEX0, GX_TEX_ST, GX_F32, 0);
+	// format 2: format 1 is FreeTypeGX's (the menu text), set up only once
+	GX_SetVtxAttrFmt (GX_VTXFMT2, GX_VA_POS, GX_POS_XYZ, GX_S16, 0);
+	GX_SetVtxAttrFmt (GX_VTXFMT2, GX_VA_TEX0, GX_TEX_ST, GX_F32, 0);
 	GX_InvVtxCache ();
 	GX_SetBlendMode (GX_BM_BLEND, GX_BL_SRCALPHA, GX_BL_INVSRCALPHA, GX_LO_CLEAR);
 	GX_LoadTexObj (&bezelTexObj, GX_TEXMAP0);
@@ -521,7 +522,7 @@ static void DrawBezel()
 	guMtxConcat (view, m, mv);
 	GX_LoadPosMtxImm (mv, GX_PNMTX0);
 
-	GX_Begin (GX_QUADS, GX_VTXFMT1, 4);
+	GX_Begin (GX_QUADS, GX_VTXFMT2, 4);
 	GX_Position3s16 (left, top, 0);
 	GX_TexCoord2f32 (0.0f, 0.0f);
 	GX_Position3s16 (right, top, 0);
