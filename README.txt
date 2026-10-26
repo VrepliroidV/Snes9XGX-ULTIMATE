@@ -7,6 +7,18 @@ Snes9x TX is a fork of Snes9x GX: https://github.com/dborth/snes9xgx
 Update History
 --------------
 
+---Snes9x TX 1.1.3-usb.3 (VrepliroidV)---
+---October 25 2026---
+
+- PNG bezels (Video > Bezel), in 480i and 480p (not in 240p): the game
+  fills the transparent window found in the middle of the PNG, with the
+  bezel drawn over its edges; a PNG without a window is a background. Any
+  PNG size; the bezel covers the whole picture of the TV
+- Choices: Off, Default (TV) (a TV frame built into the emulator, on by
+  default), Auto (<game>.png, else default.png, else the TV frame) and each
+  PNG in snes9xtx/bezels on the SD card or USB drive. Kept per game too
+- pt-BR translations for the new texts
+
 ---Snes9x TX 1.1.3-usb.2 (VrepliroidV)---
 ---October 21 2026---
 

@@ -1,46 +1,32 @@
-Versão modificada do [Snes9x TX 1.1.3](https://github.com/saulfabregwiivc/Snes9xTX) (Tanooki) para Wii, com suporte a controles USB sem fio, Auto Crop, overclock automático, configurações por jogo e cheats digitados no menu. *English below.*
+Versão modificada do [Snes9x TX 1.1.3](https://github.com/saulfabregwiivc/Snes9xTX) (Tanooki) para Wii, com molduras em PNG, suporte a controles USB sem fio, Auto Crop, overclock automático, configurações por jogo e cheats digitados no menu. *English below.*
 
 ## Novidades desta versão
 
-**Overclock automático** (Configurações > Emulação Hacks > CPU Overclocking > **Automático**):
-- O overclock só entra quando o jogo fica lento, um nível por vez (Baixo, Médio, Máximo), e volta a descer quando a cena alivia. O emulador mede, a cada quadro, quanto tempo a CPU do console passa esperando.
-- Fica desligado nas transições: tela apagada ou escurecendo, carregamentos e envio de música para o chip de som, que é quando jogos como **Top Gear** e **Primal Rage** travavam ou ficavam com a tela preta em Max. Cada jogo começa sem overclock, então os jogos que não abrem com overclock abrem normalmente.
-- Com **Mostrar FPS** ligado, aparece o nível em uso e quanto do quadro a CPU passou trabalhando, por exemplo `OC Med 72%`.
+**Molduras em PNG** (Game Settings > Video > **Moldura**), para preencher o espaço vazio ao redor do jogo numa TV LCD:
+- Aparecem nos modos 480i e 480p (Rendering **Default**). Em 240p (Original) a imagem fica como sempre, sem moldura.
+- O emulador acha sozinho a área transparente no meio do PNG e encaixa a tela do jogo nela. A moldura é desenhada por cima, então cantos arredondados ficam certinhos. O Auto Crop continua funcionando dentro da moldura.
+- Um PNG sem área transparente no meio vira fundo, com o jogo na frente no tamanho de sempre.
+- PNG de qualquer tamanho, por exemplo os de 1920x1080 feitos para o RetroArch. A moldura cobre a imagem inteira da TV; com o Wii em 16:9, use molduras de 16:9.
+- Opções: **Desligado**, **Padrão (TV)** (a moldura de TV que já vem no emulador), **Automática** (`<nome do jogo>.png`, senão `default.png`, senão a moldura de TV) e cada PNG da pasta `snes9xtx/bezels`, no SD ou no pendrive.
+- Vem ligada na **Padrão (TV)**. A escolha também entra nas configurações por jogo.
+- Com uma moldura que tem área transparente, o Zoom e a Posição da tela são ignorados: quem define o lugar do jogo é a moldura.
 
-**Configurações por jogo** (Configurações > botão **Por Jogo**): guarda as opções de vídeo, som e emulação só para o jogo aberto, no arquivo `<jogo>.cfg` junto dos saves. Por exemplo, um jogo com Auto Crop e outro com overclock fixo. Desligar o botão faz o jogo voltar às configurações gerais.
+## O que já vinha nas versões anteriores
 
-**Auto Crop** (Game Settings > Video > Auto Crop): corta as bordas pretas ao redor da imagem do jogo, com as mesmas regras do núcleo [snes9x-ntsc-lie-pal](https://github.com/VrepliroidV/snes9x-ntsc-lie-pal).
-- **Off**, **Fit** (amplia sem deformar os pixels) ou **Stretch** (estica até preencher o quadro).
-- Linhas desenhadas com a tela desligada são cortadas em 2 quadros. Barras de tiles pretos só são cortadas quando a tela parece gameplay, então telas de logo e texto sobre fundo preto ficam inteiras.
-- Enquadramentos que ficam 5 segundos na tela são memorizados para o jogo, no arquivo `<jogo>.autocrop` junto dos saves. Apague o arquivo para o jogo aprender de novo.
-- Gráficos que aparecem na área cortada voltam a aparecer no mesmo quadro. A mira da Super Scope e o mouse acompanham o corte.
-- **Auto Crop Scaling**: **Suave** preenche a tela e fica nítido mesmo com o filtro bilinear desligado. **Inteira** amplia só em número inteiro, sem nenhuma linha misturada; em 240p, num jogo com faixas em cima e embaixo, a altura fica como está.
-
-**Cheats digitados no menu** (Game Settings > Cheats), sem precisar copiar arquivo para o SD:
-- **Adicionar Código**: escolha Game Genie ou Action Replay e digite só as letras e os números. O `-`, o `:` e o `+` entre vários códigos entram sozinhos. Depois, dê um nome ao código.
-- Clique num código para ligar ou desligar. **Renomear Código** troca o nome e **Apagar Código** remove um.
-- Tudo é salvo no arquivo de cheats do jogo (`snes9xtx/cheats/<jogo>.cht`), com o estado ligado ou desligado. Os códigos ligados voltam a funcionar quando o jogo abre.
-- Funciona com qualquer controle, inclusive os controles USB, e o direcional chega até o botão Voltar.
-
-**Atalhos do menu**
-- Os atalhos L + R + Start (controle de GameCube) e L + R + Plus (Classic Controller) foram retirados: eles atrapalhavam em jogos e cheats.
-- Agora o menu abre com **L + Select + Start** nos controles USB, **Home** no Wiimote e no Classic Controller, e o **direcional C para a esquerda** no controle de GameCube.
-
-Textos novos traduzidos para português.
-
-## O que já vinha na versão anterior
-
-- **Controles USB do tipo Xbox 360 (XInput)**, com fio ou com receptor 2.4 GHz plugado direto no USB do Wii. Testado com o **Retroflag Classic Controller-M wireless** (estilo Mega Drive) e com um **controle sem fio genérico de SNES Classic Mini**. Até 4 controles; o primeiro receptor plugado é o jogador 1. Pode plugar e tirar com o emulador aberto. O emulador vê esses controles como **controle de GameCube**.
-- **Região** aplicada em todo jogo carregado, e a opção **NTSC (Lie to PAL)**: temporização NTSC (60 Hz), mas o jogo acredita que está num console PAL.
-- Música do menu: `bg_music.ogg` na pasta do app, em `sd:/snes9xtx` ou em `usb:/snes9xtx`.
-- Correção do erro de exceção ao abrir o emulador com alguns receptores USB plugados junto com outro aparelho USB.
+- **Overclock automático** (Emulation Hacks > CPU Overclocking > Automático): o overclock só entra quando o jogo fica lento e fica desligado nas transições, onde jogos como Top Gear e Primal Rage travavam em Max. Com Mostrar FPS ligado, aparece o nível em uso.
+- **Configurações por jogo** (botão **Por Jogo**), no arquivo `<jogo>.cfg` junto dos saves.
+- **Auto Crop** das bordas pretas (Video > Auto Crop: Fit ou Stretch) e **Auto Crop Scaling** (Suave ou Inteira).
+- **Cheats digitados no menu** (Game Genie e Action Replay), com nome, renomear e apagar.
+- O menu abre com **L + Select + Start** nos controles USB, **Home** no Wiimote e no Classic Controller e o **direcional C para a esquerda** no controle de GameCube.
+- **Controles USB do tipo Xbox 360 (XInput)**, com fio ou com receptor 2.4 GHz plugado direto no USB do Wii (testados com o Retroflag Classic Controller-M wireless e com um controle genérico de SNES Classic Mini). Até 4 controles, vistos como controle de GameCube.
+- **Região** aplicada em todo jogo, e a opção **NTSC (Lie to PAL)**.
 
 ## Instalação
 
-1. Baixe o `Snes9xTX-Wii.zip` e extraia na raiz do cartão SD ou do pendrive. Ele cria `apps/snes9xtx` (o emulador) e a pasta `snes9xtx` com `roms`, `saves` e `cheats`.
+1. Baixe o `Snes9xTX-Wii.zip` e extraia na raiz do cartão SD ou do pendrive. Ele cria `apps/snes9xtx` (o emulador) e a pasta `snes9xtx` com `roms`, `saves`, `cheats` e `bezels`.
 2. Se você já tem o Snes9x TX instalado, basta trocar o `boot.dol` da pasta `apps/snes9xtx`. Suas configurações e saves continuam.
 
-O `Snes9xTX-GameCube.zip` traz a versão de GameCube: tem o Auto Crop, o overclock automático, as configurações por jogo, os cheats e as melhorias de região, mas não os controles USB.
+O `Snes9xTX-GameCube.zip` traz a versão de GameCube: tem as molduras, o Auto Crop, o overclock automático, as configurações por jogo, os cheats e as melhorias de região, mas não os controles USB.
 
 ## Observações
 
@@ -51,16 +37,12 @@ O `Snes9xTX-GameCube.zip` traz a versão de GameCube: tem o Auto Crop, o overclo
 
 ## English
 
-Snes9x TX 1.1.3 for Wii with Xbox 360 (XInput) USB controllers, Auto Crop, automatic overclock, per-game settings and cheats typed in the menu.
+Snes9x TX 1.1.3 for Wii with PNG bezels, Xbox 360 (XInput) USB controllers, Auto Crop, automatic overclock, per-game settings and cheats typed in the menu.
 
 New in this version:
-- **Automatic CPU overclock** (Game Settings > Emulation Hacks > CPU Overclocking > Auto): the overclock goes up one level at a time (Low, Medium, Max) only when the game slows down, and back down when it is not needed. It stays off while the screen is dark or fading, while loading and while music goes to the sound chip (where Top Gear and Primal Rage hung at Max), and each game starts without it. With Show Frame Rate on, the level in use and how busy the CPU was are shown (e.g. `OC Med 72%`).
-- **Per-game settings** (Game Settings > Per-Game): the video, audio and emulation options are kept for the loaded game only, in `<game>.cfg` next to the saves.
-- **Auto Crop** (Game Settings > Video): crops black borders, with the rules of the snes9x-ntsc-lie-pal Libretro core. Off, Fit (keeps the pixel shape) or Stretch (fills the frame). Layouts seen for 5 seconds are remembered per game in `<game>.autocrop` next to the saves. **Auto Crop Scaling**: Smooth fills the frame and stays sharp with bilinear filtering off; Integer only scales by whole numbers.
-- **Cheats** (Game Settings > Cheats): Add Code types Game Genie or Action Replay codes with the `-`, `:` and `+` added by themselves, then a name for the code; click a code to turn it on or off; Rename Code and Delete Code. Everything is saved to the game's cheat file, and codes saved as on are active when the game loads. Works with every controller.
-- The L + R + Start (GameCube) and L + R + Plus (Classic Controller) menu combos were removed. The menu opens with L + Select + Start on USB pads, Home on Wii controllers and C stick left on GameCube controllers.
+- **PNG bezels** (Game Settings > Video > Bezel), in 480i and 480p (not in 240p). The transparent window in the middle of the PNG is found by itself and the game fills it, with the bezel drawn over its edges; a PNG without a window is a background behind the game. Any PNG size works (1920x1080 RetroArch bezels included); the bezel covers the whole picture of the TV. Choices: Off, Default (TV) (the TV frame built into the emulator, on by default), Auto (`<game>.png`, else `default.png`, else the TV frame) and each PNG in `snes9xtx/bezels` on the SD card or USB drive. Kept per game too. With a window, screen zoom and position are not used.
 
-Already in the previous version: USB controllers read as GameCube controllers (tested with the Retroflag Classic Controller-M wireless and a generic SNES Classic Mini wireless pad, up to 4, hot-plug), the region option applied on every game load, the NTSC (Lie to PAL) region, menu music from `bg_music.ogg`, and a fix for a start-up crash with some USB receivers.
+Already in the previous versions: automatic CPU overclock, per-game settings, Auto Crop of black borders, cheats typed in the menu, USB controllers read as GameCube controllers (up to 4, hot-plug), the region option and NTSC (Lie to PAL).
 
 Install: extract `Snes9xTX-Wii.zip` to the root of the SD card or USB drive, or replace `apps/snes9xtx/boot.dol` in an existing install.
 
