@@ -1094,7 +1094,7 @@ static int MenuGameSelection()
 	
 	HaltGui();
 	btnLogo->SetAlignment(ALIGN_RIGHT, ALIGN_TOP);
-	btnLogo->SetPosition(-50, 24);
+	btnLogo->SetPosition(-50, 20); // logo 64 high: bottom at 84, above the edge of the top bar
 	mainWindow->Append(&titleTxt);
 	mainWindow->Append(&gameBrowser);
 	mainWindow->Append(&buttonWindow);
@@ -5220,7 +5220,7 @@ MainMenu (int menu)
 	logoTxt.SetPosition(-7, 5);
 	btnLogo = new GuiButton(logoImg.GetWidth(), logoImg.GetHeight());
 	btnLogo->SetAlignment(ALIGN_RIGHT, ALIGN_TOP);
-	btnLogo->SetPosition(-50, 24);
+	btnLogo->SetPosition(-50, 20); // logo 64 high: bottom at 84, above the edge of the top bar
 	btnLogo->SetImage(&logoImg);
 	btnLogo->SetImageOver(&logoImgOver);
 	btnLogo->SetLabel(&logoTxt);
