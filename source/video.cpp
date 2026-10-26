@@ -419,9 +419,11 @@ draw_square (Mtx v)
 /****************************************************************************
  * Bezels
  ***************************************************************************/
+static bool bezelShown = false; // drawn in the current video mode
+
 static bool BezelHole()
 {
-	return bezel.texture != NULL && bezel.hole_w > 0;
+	return bezelShown && bezel.hole_w > 0;
 }
 
 // Finds a bezel file on the devices (SD first).
@@ -466,12 +468,20 @@ static bool BezelFile(char *path)
 	return true;
 }
 
-// Loads the bezel for the screen of rmode (NULL: no bezel), unless it was
-// tried already for it.
-static void BezelUpdate(GXRModeObj *rmode)
+static GXRModeObj * FindVideoMode();
+
+// Before the game runs again (menu -> game, with nothing on screen to keep
+// going): loads the bezel of the setting for the default rendering, unless it
+// was tried already. In 240p the one loaded is kept for later.
+void BezelPrepare()
 {
 	char path[MAXPATHLEN];
-	if (!rmode || rmode->aa || !BezelFile(path))
+	bezelShown = false; // until ResetVideo_Emu
+	if (GCSettings.render != 0)
+		return;
+
+	GXRModeObj *rmode = FindVideoMode();
+	if (rmode->aa || !BezelFile(path))
 	{
 		bezel_free(&bezel);
 		bezelPath[0] = 0;
@@ -799,7 +809,7 @@ ResetVideo_Emu ()
 	if(i >= 0)
 	{
 		rmode = tvmodes[i];
-		BezelUpdate(NULL); // no bezel in 240p
+		bezelShown = false; // no bezel in 240p
 
 		// hack to fix video output for filters (only when actually filtering; h<=239, w<=256)
 		if (GCSettings.VideoFilter != FILTER_NONE && vheight <= 239 && vwidth <= 256)
@@ -824,12 +834,14 @@ ResetVideo_Emu ()
 	{
 		rmode = FindVideoMode();
 
-		// not for a screenshot taken in original rendering (see update_video)
-		BezelUpdate((GCSettings.render == 0 && oldRenderMode == -1) ? rmode : NULL);
+		// the bezel loaded by BezelPrepare, not for a screenshot taken in
+		// original rendering (see update_video)
+		bezelShown = GCSettings.render == 0 && oldRenderMode == -1 && bezel.texture != NULL &&
+			bezel.height == rmode->efbHeight && !rmode->aa;
 
 		const int fbWidth = GCSettings.aspect ? 640 : 512;
 		bezelXScale = 1.0f;
-		if (bezel.texture)
+		if (bezelShown)
 		{
 			// the bezel covers the whole picture of the TV; in front of a
 			// background the game keeps its width on screen
@@ -952,7 +964,7 @@ static void UpdateSharp(int width, int height)
 
 	if (GCSettings.bilinear || !vmode || vmode->aa)
 		return;
-	if (!bezel.texture && (autoCropMode == AUTOCROP_OFF ||
+	if (!bezelShown && (autoCropMode == AUTOCROP_OFF ||
 		(texS0 == 0.0f && texS1 == 1.0f && texT0 == 0.0f && texT1 == 1.0f)))
 		return; // nothing cropped: the original scaling (with a bezel it is sharp too)
 
@@ -1306,10 +1318,9 @@ update_video (int width, int height)
 
 	// the enlarged picture uses a corner of the EFB first, so it comes before
 	// a bezel behind the game
-	const bool bezelOn = bezel.texture != NULL;
 	if (sharpW > 0)
 		DrawSharpEnlarge ();
-	if (bezelOn && !BezelHole())
+	if (bezelShown && !BezelHole())
 		DrawBezel ();	// background
 	if (sharpW > 0)
 	{
@@ -1320,7 +1331,7 @@ update_video (int width, int height)
 		GX_LoadTexObj (&texobj, GX_TEXMAP0);
 		draw_square (view);		// draw the quad
 	}
-	if (bezelOn && BezelHole())
+	if (BezelHole())
 		DrawBezel ();	// around the game, over its edges
 
 	GX_DrawDone ();

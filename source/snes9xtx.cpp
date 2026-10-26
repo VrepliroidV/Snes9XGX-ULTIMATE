@@ -604,6 +604,8 @@ int main(int argc, char *argv[])
 		// since we're starting emulation again
 		HaltDeviceThread();
 
+		BezelPrepare(); // the bezel of the game (480i/480p), before the audio starts
+
 		AudioStart();
 
 		FrameTimer = 0;

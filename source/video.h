@@ -42,6 +42,7 @@ void AutoCropMapPointer(float fx, float fy, int *x, int *y);
 
 // Bezels (GCSettings.Bezel): the PNG files in snes9xtx/bezels, for the menu
 int BezelList(char (*names)[BEZEL_NAME_MAX], int max);
+void BezelPrepare(); // loads it before the game runs again (menu -> game)
 
 extern GXRModeObj *vmode;
 extern int screenheight;
