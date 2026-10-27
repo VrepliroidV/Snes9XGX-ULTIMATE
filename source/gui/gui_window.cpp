@@ -442,7 +442,7 @@ void GuiWindow::Update(GuiTrigger * t)
 
 	this->ToggleFocus(t);
 
-	if(focus) // only send actions to this window if it's in focus
+	if(focus == 1) // only send actions to this window if it's in focus (not -1: focus disabled)
 	{
 		// pad/joystick navigation
 		if(t->Right())

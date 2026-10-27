@@ -1,4 +1,8 @@
-**Snes9x GX ULTIMATE 1.1.1**: emulador de Super Nintendo para Wii, baseado no [Snes9x TX 1.1.3](https://github.com/saulfabregwiivc/Snes9xTX) (Tanooki), que é um fork do [Snes9x GX](https://github.com/dborth/snes9xgx) (Tantric). *English below.*
+**Snes9x GX ULTIMATE 1.1.2**: emulador de Super Nintendo para Wii, baseado no [Snes9x TX 1.1.3](https://github.com/saulfabregwiivc/Snes9xTX) (Tanooki), que é um fork do [Snes9x GX](https://github.com/dborth/snes9xgx) (Tantric). *English below.*
+
+## Novidades da 1.1.2
+
+- A música não recomeça mais ao apertar um botão do menu com o controle (direcional e A), como o Settings: o mini player também andava com o direcional, e o botão de voltar ou avançar dele era apertado junto. Com uma música só na pasta, ela voltava para o início.
 
 ## Novidades da 1.1.1
 
@@ -52,7 +56,9 @@ O `Snes9xGXUltimate-GameCube.zip` traz a versão de GameCube: tem as molduras, o
 
 ## English
 
-**Snes9x GX ULTIMATE 1.1.1**: Super Nintendo emulator for Wii, based on Snes9x TX 1.1.3 (Tanooki), a fork of Snes9x GX (Tantric).
+**Snes9x GX ULTIMATE 1.1.2**: Super Nintendo emulator for Wii, based on Snes9x TX 1.1.3 (Tanooki), a fork of Snes9x GX (Tantric).
+
+New in 1.1.2: the music no longer starts again when a menu button is pressed with the controller (the mini player took the d-pad too, and its previous or next button was pressed with the button of the menu).
 
 New in 1.1.1: the menu music and its player are in the menu before a game is chosen only (the in-game menu is silent; the music starts again from the beginning when the game is closed); the music no longer starts again in some menus; the sound effects volume no longer changes the music volume.
 

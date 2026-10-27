@@ -9,6 +9,14 @@ Snes9x TX is a fork of Snes9x GX by Tantric: https://github.com/dborth/snes9xgx
 Update History
 --------------
 
+---Snes9x GX ULTIMATE 1.1.2 (VrepliroidV)---
+---October 26 2026---
+
+- The music no longer starts again when a menu button is pressed with
+  the controller (d-pad and A): the mini player took the d-pad too, and
+  its previous or next button was pressed with the button of the menu
+  (with one file in the music folder, that played it from the beginning)
+
 ---Snes9x GX ULTIMATE 1.1.1 (VrepliroidV)---
 ---October 26 2026---
 
