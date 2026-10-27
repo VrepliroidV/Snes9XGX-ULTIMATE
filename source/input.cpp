@@ -55,7 +55,8 @@ int ds3chan = 0;
 // and in game, and uses the GameCube button mapping.
 static u16 usbPadHeld[4] = {0,0,0,0};
 
-static u16 XInputToGCPad(u32 x)
+// pads: true for a 6-button pad whose triggers are buttons (XInput_TriggersAsButtons)
+static u16 XInputToGCPad(u32 x, bool sixButton)
 {
 	u16 p = 0;
 	if (x & (XI_ANY_UP    | XI_RSTICK_UP))    p |= PAD_BUTTON_UP;
@@ -67,8 +68,18 @@ static u16 XInputToGCPad(u32 x)
 	if (x & XI_B) p |= PAD_BUTTON_A;
 	if (x & XI_X) p |= PAD_BUTTON_Y;
 	if (x & XI_Y) p |= PAD_BUTTON_X;
-	if (x & (XI_LB | XI_LT)) p |= PAD_TRIGGER_L;
-	if (x & (XI_RB | XI_RT)) p |= PAD_TRIGGER_R;
+	if (sixButton)
+	{
+		// Retroflag Classic Controller-M: shoulders L = LB and R = LT; C (RT)
+		// and Z (RB) have no SNES button left
+		if (x & XI_LB) p |= PAD_TRIGGER_L;
+		if (x & XI_LT) p |= PAD_TRIGGER_R;
+	}
+	else
+	{
+		if (x & (XI_LB | XI_LT)) p |= PAD_TRIGGER_L;
+		if (x & (XI_RB | XI_RT)) p |= PAD_TRIGGER_R;
+	}
 	if (x & XI_START) p |= PAD_BUTTON_START;
 	if (x & XI_BACK)  p |= PAD_TRIGGER_Z;
 	return p;
@@ -414,7 +425,7 @@ UpdatePads()
 #ifdef HW_RVL
 	for(int i=0; i < 4; i++)
 	{
-		u16 usb = XInputToGCPad(XInput_ButtonsHeld(i));
+		u16 usb = XInputToGCPad(XInput_ButtonsHeld(i), XInput_TriggersAsButtons(i));
 		userInput[i].pad.btns_d |= usb & ~usbPadHeld[i];
 		userInput[i].pad.btns_u |= usbPadHeld[i] & ~usb;
 		userInput[i].pad.btns_h |= usb;

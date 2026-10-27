@@ -9,6 +9,16 @@ Snes9x TX is a fork of Snes9x GX by Tantric: https://github.com/dborth/snes9xgx
 Update History
 --------------
 
+---Snes9x GX ULTIMATE 1.1.3 (VrepliroidV)---
+---October 27 2026---
+
+- 6-button USB pads (Retroflag Classic Controller-M): the left shoulder
+  button is L and the right one R. The pad sends its shoulders as LB and
+  LT, C as RT and Z as RB, so the right shoulder was L, and C and Z were R.
+  A pad without sticks whose triggers are only ever released or fully
+  pressed is read this way (once a trigger was pressed); C and Z have no
+  SNES button. Other pads keep LB/LT = L and RB/RT = R.
+
 ---Snes9x GX ULTIMATE 1.1.2 (VrepliroidV)---
 ---October 26 2026---
 
