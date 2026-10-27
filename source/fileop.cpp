@@ -24,6 +24,7 @@
 #include <di/di.h>
 #include <ogc/dvd.h>
 #include <iso9660.h>
+#include <ogc/lwp_watchdog.h>
 
 #include "snes9xtx.h"
 #include "fileop.h"
@@ -31,6 +32,8 @@
 #include "menu.h"
 #include "filebrowser.h"
 #include "gui/gui.h"
+#include "utils/bezel.h"
+#include "utils/oggplayer.h"
 
 #ifdef HW_RVL
 	#include "mem2.h"
@@ -891,32 +894,77 @@ size_t LoadFont(char * filepath)
 	return loadSize;
 }
 
-// Menu music is not built in: bg_music.ogg is played from the app folder
-// (apps/<APPFOLDER>). The data folder (sd:/<APPFOLDER> or usb:/<APPFOLDER>) is
-// also checked, since both places are called "the emulator's folder".
-void LoadBgMusic()
+/****************************************************************************
+ * Menu music (GCSettings.MenuMusic): an OGG file of <APPFOLDER>/music on the
+ * SD card or USB drive (SD first), read into MEM2 and played by the menu.
+ ***************************************************************************/
+#define MENU_MUSIC_MAX_SIZE (8 * 1024 * 1024) // MEM2 heap room (20 MB in all)
+static const int musicDevices[] = { DEVICE_SD, DEVICE_USB };
+
+int MenuMusicList(char (*names)[BEZEL_NAME_MAX], int max)
+{
+	char dir[MAXPATHLEN];
+	int count = 0;
+	for (unsigned int i = 0; i < sizeof(musicDevices) / sizeof(musicDevices[0]); i++)
+	{
+		snprintf(dir, sizeof(dir), "%s%s", pathPrefix[musicDevices[i]], MENU_MUSIC_FOLDER);
+		count = bezel_list_ext(dir, ".ogg", names, count, max);
+	}
+	return count;
+}
+
+static bool MenuMusicFind(const char *name, char *path)
+{
+	struct stat st;
+	for (unsigned int i = 0; i < sizeof(musicDevices) / sizeof(musicDevices[0]); i++)
+	{
+		snprintf(path, MAXPATHLEN, "%s%s/%s", pathPrefix[musicDevices[i]], MENU_MUSIC_FOLDER, name);
+		if (stat(path, &st) == 0 && !S_ISDIR(st.st_mode))
+			return true;
+	}
+	path[0] = 0;
+	return false;
+}
+
+void LoadMenuMusic()
 {
 	if(bg_music)
-		return; // already loaded
+	{
+		StopOgg(); // the player reads the buffer
+		mem2_free(bg_music);
+		bg_music = NULL;
+		bg_music_size = 0;
+	}
+
+	char name[BEZEL_NAME_MAX];
+	if(GCSettings.MenuMusic[0] == 0)
+		return;
+	if(strcmp(GCSettings.MenuMusic, MENU_MUSIC_RANDOM) == 0)
+	{
+		char (*names)[BEZEL_NAME_MAX] = (char (*)[BEZEL_NAME_MAX]) malloc(MAX_MENU_MUSIC * BEZEL_NAME_MAX);
+		int count = names ? MenuMusicList(names, MAX_MENU_MUSIC) : 0;
+		if(count > 0)
+			snprintf(name, sizeof(name), "%s", names[(u32)(gettime() % count)]);
+		free(names);
+		if(count == 0)
+			return;
+	}
+	else
+	{
+		snprintf(name, sizeof(name), "%s", GCSettings.MenuMusic);
+	}
 
 	char filepath[MAXPATHLEN];
-	const char *places[3] = { appPath, "sd:/" APPFOLDER, "usb:/" APPFOLDER };
-	FILE *file = NULL;
-
-	for(int i = 0; i < 3 && !file; i++) {
-		if(places[i][0] == 0)
-			continue;
-		snprintf(filepath, sizeof(filepath), "%s/bg_music.ogg", places[i]);
-		file = fopen (filepath, "rb");
-	}
-	if(!file) {
+	if(!MenuMusicFind(name, filepath))
 		return;
-	}
+	FILE *file = fopen(filepath, "rb");
+	if(!file)
+		return;
 
 	fseeko(file,0,SEEK_END);
 	size_t ogg_size = ftello(file);
 
-	if(ogg_size == 0) {
+	if(ogg_size == 0 || ogg_size > MENU_MUSIC_MAX_SIZE) {
 		fclose(file);
 		return;
 	}

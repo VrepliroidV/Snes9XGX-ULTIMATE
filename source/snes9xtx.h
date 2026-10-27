@@ -24,6 +24,13 @@
 #define APPNAME 			"Snes9x GX ULTIMATE"
 #define APPVERSION 			"1.0.0" // based on Snes9x TX 1.1.3
 #define APPFOLDER 			"snes9xgxultimate"
+
+// Menu music (GCSettings.MenuMusic): none, one of the OGG files of
+// <APPFOLDER>/music picked by chance at every start, or one file name
+// ("<" is not allowed in FAT file names)
+#define MENU_MUSIC_OFF		""
+#define MENU_MUSIC_RANDOM	"<random>"
+#define MENU_MUSIC_FOLDER	APPFOLDER "/music"
 #define PREF_FILE_NAME		"settings.xml"
 
 #define MAXPATHLEN 1024
@@ -154,6 +161,7 @@ struct SGCSettings{
 	int		WiimoteOrientation;
 	int		ExitAction;
 	int		MusicVolume;
+	char	MenuMusic[128];	// MENU_MUSIC_OFF, MENU_MUSIC_RANDOM or an OGG file in <APPFOLDER>/music
 	int		SFXVolume;
 	int		language;
 	int		PreviewImage;

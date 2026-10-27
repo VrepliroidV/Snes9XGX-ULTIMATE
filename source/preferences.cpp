@@ -180,6 +180,7 @@ preparePrefsData ()
 #endif
 	createXMLSetting("ExitAction", "Exit Action", toStr(GCSettings.ExitAction));
 	createXMLSetting("MusicVolume", "Music Volume", toStr(GCSettings.MusicVolume));
+	createXMLSetting("MenuMusic", "Menu Music", GCSettings.MenuMusic);
 	createXMLSetting("SFXVolume", "Sound Effects Volume", toStr(GCSettings.SFXVolume));
 	createXMLSetting("language", "Language", toStr(GCSettings.language));
 	createXMLSetting("PreviewImage", "Preview Image", toStr(GCSettings.PreviewImage));
@@ -375,6 +376,7 @@ decodePrefsData ()
 			loadXMLSetting(&GCSettings.WiimoteOrientation, "WiimoteOrientation");
 			loadXMLSetting(&GCSettings.ExitAction, "ExitAction");
 			loadXMLSetting(&GCSettings.MusicVolume, "MusicVolume");
+			loadXMLSetting(GCSettings.MenuMusic, "MenuMusic", sizeof(GCSettings.MenuMusic));
 			loadXMLSetting(&GCSettings.SFXVolume, "SFXVolume");
 			loadXMLSetting(&GCSettings.language, "language");
 			loadXMLSetting(&GCSettings.PreviewImage, "PreviewImage");
@@ -448,6 +450,9 @@ void FixInvalidSettings()
 	GCSettings.Bezel[sizeof(GCSettings.Bezel) - 1] = 0;
 	if(strchr(GCSettings.Bezel, '/') || strchr(GCSettings.Bezel, '\\'))
 		GCSettings.Bezel[0] = 0; // a file name only
+	GCSettings.MenuMusic[sizeof(GCSettings.MenuMusic) - 1] = 0;
+	if(strchr(GCSettings.MenuMusic, '/') || strchr(GCSettings.MenuMusic, '\\'))
+		GCSettings.MenuMusic[0] = 0; // a file name only
 }
 
 /****************************************************************************
@@ -494,6 +499,7 @@ DefaultSettings ()
 	GCSettings.ExitAction = 0;
 	GCSettings.AutoloadGame = 0;
 	GCSettings.MusicVolume = 80;
+	snprintf(GCSettings.MenuMusic, sizeof(GCSettings.MenuMusic), "%s", MENU_MUSIC_RANDOM); // one of the music folder
 	GCSettings.SFXVolume = 20;
 	GCSettings.PreviewImage = 0;
 	GCSettings.HideSRAMSaving = 0;
@@ -777,6 +783,8 @@ bool LoadPrefs()
 		CreateDirectory(dirPath);
 		sprintf(dirPath, "%s%s/bezels", pathPrefix[GCSettings.LoadMethod], APPFOLDER);
 		CreateDirectory(dirPath);
+		sprintf(dirPath, "%s%s", pathPrefix[GCSettings.LoadMethod], MENU_MUSIC_FOLDER);
+		CreateDirectory(dirPath);
 	}
 
 	if(GCSettings.videomode > 0) {
@@ -786,7 +794,7 @@ bool LoadPrefs()
 	ChangeLanguage();
 
 #ifdef HW_RVL
-	LoadBgMusic();
+	LoadMenuMusic();
 #endif
 	return prefFound;
 }

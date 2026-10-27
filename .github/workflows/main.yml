@@ -64,6 +64,9 @@ jobs:
         touch dist/Snes9xGXUltimate/snes9xgxultimate/cheats/cheatsdir
         touch dist/Snes9xGXUltimate/snes9xgxultimate/saves/savesdir
         touch dist/Snes9xGXUltimate/snes9xgxultimate/bezels/bezelsdir
+        # menu music: the OGG files of music/ in this repository
+        mkdir dist/Snes9xGXUltimate/snes9xgxultimate/music
+        if ls music/*.ogg >/dev/null 2>&1; then cp music/*.ogg dist/Snes9xGXUltimate/snes9xgxultimate/music/; else touch dist/Snes9xGXUltimate/snes9xgxultimate/music/musicdir; fi
         cp hbc/* dist/Snes9xGXUltimate/apps/snes9xgxultimate/
         cp LICENSE dist/Snes9xGXUltimate/apps/snes9xgxultimate/
         cp executables/snes9xgxultimate-wii.dol dist/Snes9xGXUltimate/apps/snes9xgxultimate/boot.dol

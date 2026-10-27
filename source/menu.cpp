@@ -4843,6 +4843,45 @@ static int MenuSettingsFile()
 /****************************************************************************
  * MenuSettingsMenu
  ***************************************************************************/
+// Menu music: no music, Random, then each OGG file of the music folder
+static void NextMenuMusic(char (*names)[BEZEL_NAME_MAX], int count)
+{
+	int i = -1; // Random: the first file next
+	if (GCSettings.MenuMusic[0] == 0)
+	{
+		snprintf(GCSettings.MenuMusic, sizeof(GCSettings.MenuMusic), "%s", MENU_MUSIC_RANDOM);
+		return;
+	}
+	if (strcmp(GCSettings.MenuMusic, MENU_MUSIC_RANDOM) != 0)
+	{
+		for (i = 0; i < count && strcasecmp(names[i], GCSettings.MenuMusic) != 0; i++);
+		if (i == count)
+			i = count - 1; // not there any more: no music next
+	}
+	if (i + 1 < count)
+		snprintf(GCSettings.MenuMusic, sizeof(GCSettings.MenuMusic), "%s", names[i + 1]);
+	else
+		GCSettings.MenuMusic[0] = 0;
+}
+
+// Plays the music of the setting from the start (after a change, to hear it)
+static void MenuMusicRestart()
+{
+	#if defined(HW_RVL) && !defined(NO_SOUND)
+	if(bgMusic)
+	{
+		delete bgMusic; // stops it
+		bgMusic = NULL;
+	}
+	LoadMenuMusic();
+	bgMusic = new GuiSound(bg_music, bg_music_size, SOUND_OGG);
+	bgMusic->SetVolume(GCSettings.MusicVolume);
+	bgMusic->SetLoop(true);
+	if(bg_music)
+		bgMusic->Play();
+	#endif
+}
+
 static int MenuSettingsMenu()
 {
 	int menu = MENU_NONE;
@@ -4855,6 +4894,7 @@ static int MenuSettingsMenu()
 	sprintf(options.name[i++], "Exit Action");
 	sprintf(options.name[i++], "Wiimote Orientation");
 	sprintf(options.name[i++], "Music Volume");
+	sprintf(options.name[i++], "Menu Music");
 	sprintf(options.name[i++], "Sound Effects Volume");
 	sprintf(options.name[i++], "Language");
 	sprintf(options.name[i++], "Preview Image");
@@ -4863,6 +4903,14 @@ static int MenuSettingsMenu()
 
 	for(i=0; i < options.length; i++)
 		options.value[i][0] = 0;
+
+	// the OGG files in <APPFOLDER>/music
+	char (*musicNames)[BEZEL_NAME_MAX] = NULL;
+	int musicCount = 0;
+	#ifdef HW_RVL
+	musicNames = (char (*)[BEZEL_NAME_MAX]) malloc(MAX_MENU_MUSIC * BEZEL_NAME_MAX);
+	musicCount = musicNames ? MenuMusicList(musicNames, MAX_MENU_MUSIC) : 0;
+	#endif
 
 	GuiText titleTxt("Settings - Menu", 26, (GXColor){255, 255, 255, 255});
 	titleTxt.SetAlignment(ALIGN_LEFT, ALIGN_TOP);
@@ -4931,12 +4979,16 @@ static int MenuSettingsMenu()
 				bgMusic->SetVolume(GCSettings.MusicVolume);
 				break;
 			case 3:
+				NextMenuMusic(musicNames, musicCount);
+				MenuMusicRestart();
+				break;
+			case 4:
 				GCSettings.SFXVolume += 10;
 				if(GCSettings.SFXVolume > 100)
 					GCSettings.SFXVolume = 0;
 				enterSound->SetVolume(GCSettings.SFXVolume);
 				break;
-			case 4:
+			case 5:
 				GCSettings.language++;
 				
 				if(GCSettings.language == LANG_TRAD_CHINESE) // skip (not supported)
@@ -4944,12 +4996,12 @@ static int MenuSettingsMenu()
 				else if(GCSettings.language >= LANG_LENGTH)
 					GCSettings.language = LANG_JAPANESE;
 				break;
-			case 5:
+			case 6:
 				GCSettings.PreviewImage++;
 				if(GCSettings.PreviewImage > 2)
 					GCSettings.PreviewImage = 0;
 				break;
-			case 6:
+			case 7:
 				GCSettings.HideSRAMSaving ^= 1;
 				break;
 		}
@@ -4977,7 +5029,8 @@ static int MenuSettingsMenu()
 
 			options.name[1][0] = 0; // Wiimote
 			options.name[2][0] = 0; // Music
-			options.name[3][0] = 0; // Sound Effects
+			options.name[3][0] = 0; // Menu Music
+			options.name[4][0] = 0; // Sound Effects
 			#endif
 
 			if (GCSettings.WiimoteOrientation == 0)
@@ -4990,45 +5043,52 @@ static int MenuSettingsMenu()
 			else
 				sprintf(options.value[2], "Mute");
 
-			if(GCSettings.SFXVolume > 0)
-				sprintf(options.value[3], "%d%%", GCSettings.SFXVolume);
+			if(GCSettings.MenuMusic[0] == 0)
+				sprintf(options.value[3], "No Music");
+			else if(strcmp(GCSettings.MenuMusic, MENU_MUSIC_RANDOM) == 0)
+				sprintf(options.value[3], "Random");
 			else
-				sprintf(options.value[3], "Mute");
+				bezel_display_name_ext(GCSettings.MenuMusic, ".ogg", options.value[3], 28);
+
+			if(GCSettings.SFXVolume > 0)
+				sprintf(options.value[4], "%d%%", GCSettings.SFXVolume);
+			else
+				sprintf(options.value[4], "Mute");
 
 			switch(GCSettings.language)
 			{
-				case LANG_JAPANESE:		sprintf(options.value[4], "Japanese"); break;
-				case LANG_ENGLISH:		sprintf(options.value[4], "English"); break;
-				case LANG_GERMAN:		sprintf(options.value[4], "German"); break;
-				case LANG_FRENCH:		sprintf(options.value[4], "French"); break;
-				case LANG_SPANISH:		sprintf(options.value[4], "Spanish"); break;
-				case LANG_ITALIAN:		sprintf(options.value[4], "Italian"); break;
-				case LANG_DUTCH:		sprintf(options.value[4], "Dutch"); break;
-				case LANG_SIMP_CHINESE:	sprintf(options.value[4], "Chinese (Simplified)"); break;
-				case LANG_TRAD_CHINESE:	sprintf(options.value[4], "Chinese (Traditional)"); break;
-				case LANG_KOREAN:		sprintf(options.value[4], "Korean"); break;
-				case LANG_PORTUGUESE:	sprintf(options.value[4], "Portuguese"); break;
-				case LANG_BRAZILIAN_PORTUGUESE: sprintf(options.value[4], "Brazilian Portuguese"); break;
-				case LANG_TURKISH:		sprintf(options.value[4], "Turkish"); break;
+				case LANG_JAPANESE:		sprintf(options.value[5], "Japanese"); break;
+				case LANG_ENGLISH:		sprintf(options.value[5], "English"); break;
+				case LANG_GERMAN:		sprintf(options.value[5], "German"); break;
+				case LANG_FRENCH:		sprintf(options.value[5], "French"); break;
+				case LANG_SPANISH:		sprintf(options.value[5], "Spanish"); break;
+				case LANG_ITALIAN:		sprintf(options.value[5], "Italian"); break;
+				case LANG_DUTCH:		sprintf(options.value[5], "Dutch"); break;
+				case LANG_SIMP_CHINESE:	sprintf(options.value[5], "Chinese (Simplified)"); break;
+				case LANG_TRAD_CHINESE:	sprintf(options.value[5], "Chinese (Traditional)"); break;
+				case LANG_KOREAN:		sprintf(options.value[5], "Korean"); break;
+				case LANG_PORTUGUESE:	sprintf(options.value[5], "Portuguese"); break;
+				case LANG_BRAZILIAN_PORTUGUESE: sprintf(options.value[5], "Brazilian Portuguese"); break;
+				case LANG_TURKISH:		sprintf(options.value[5], "Turkish"); break;
 			}
 			
 			switch(GCSettings.PreviewImage)
 			{
 				case 0:	
-					sprintf(options.value[5], "Screenshots");
+					sprintf(options.value[6], "Screenshots");
 					break; 
 				case 1:	
-					sprintf(options.value[5], "Covers");
+					sprintf(options.value[6], "Covers");
 					break; 
 				case 2:	
-					sprintf(options.value[5], "Artwork");
+					sprintf(options.value[6], "Artwork");
 					break; 
 			}
 			
 			if (GCSettings.HideSRAMSaving == 1)
-				sprintf (options.value[6], "On");
+				sprintf (options.value[7], "On");
 			else
-				sprintf (options.value[6], "Off");
+				sprintf (options.value[7], "Off");
 
 			optionBrowser.TriggerUpdate();
 		}
@@ -5038,6 +5098,7 @@ static int MenuSettingsMenu()
 			menu = MENU_SETTINGS;
 		}
 	}
+	free(musicNames);
 	ChangeLanguage();
 	HaltGui();
 	mainWindow->Remove(&optionBrowser);
