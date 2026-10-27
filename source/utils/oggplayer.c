@@ -35,6 +35,7 @@
 #include <tremor/ivorbisfile.h>
 #include <gccore.h>
 #include <unistd.h>
+#include <fcntl.h>
 #include <string.h>
 
 #include "oggplayer.h"
@@ -455,6 +456,48 @@ int PlayOgg(const void *buffer, s32 len, int time_pos, int mode)
 	StopOgg();
 
 	private_ogg.fd = mem_open((char *)buffer, len);
+	
+	if (private_ogg.fd < 0)
+	{
+		private_ogg.fd = -1;
+		return -1;
+	}
+	
+	private_ogg.mode = mode;
+	private_ogg.eof = 0;
+	private_ogg.volume = 127;
+	private_ogg.flag = 0;
+	private_ogg.seek_time = -1;
+
+	if (time_pos > 0)
+		private_ogg.seek_time = time_pos;
+
+	if (ov_open_callbacks((void *) &private_ogg.fd, &private_ogg.vf, NULL, 0, callbacks) < 0)
+	{
+		mem_close(private_ogg.fd); // mem_close() can too close files from devices
+		private_ogg.fd = -1;
+		ogg_thread_running = 0;
+		return -1;
+	}
+
+	if (LWP_CreateThread(&h_oggplayer, (void *) ogg_player_thread,
+			&private_ogg, oggplayer_stack, STACKSIZE, 80) == -1)
+	{
+		ogg_thread_running = 0;
+		ov_clear(&private_ogg.vf);
+		private_ogg.fd = -1;
+		return -1;
+	}
+	return 0;
+}
+
+/* Same as PlayOgg(), reading the file from a device while it plays (no
+   buffer: the file can be of any size). */
+int PlayOggFile(const char *path, int time_pos, int mode)
+{
+	StopOgg();
+
+	private_ogg.fd = open(path, O_RDONLY);
 	
 	if (private_ogg.fd < 0)
 	{

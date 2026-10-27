@@ -56,6 +56,9 @@ extern "C"
  ***************************************************************************/
 int PlayOgg(const void *buffer, s32 len, int time_pos, int mode);
 
+/* Same, playing the file at path (on a device) as it is read. */
+int PlayOggFile(const char *path, int time_pos, int mode);
+
 /****************************************************************************
  * StopOgg
  *

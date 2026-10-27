@@ -4,9 +4,11 @@
  * menumusic.cpp
  *
  * Menu music: the OGG files of <APPFOLDER>/music (GCSettings.MenuMusic) and
- * the mini player of the menu. The file playing is read into the MEM2 heap
- * and looped by the OGG player. The menu thread (settings) and the GUI
- * thread (player buttons) both use it, so everything here takes a lock.
+ * the mini player of the menu. The OGG player reads the file playing from
+ * the SD card or USB drive as it plays, and loops it (so files of any size
+ * play, and changing the music does not stop the menu). The menu thread
+ * (settings) and the GUI thread (player buttons) both use it, so everything
+ * here takes a lock.
  ***************************************************************************/
 
 #include <gccore.h>
@@ -26,21 +28,14 @@
 
 #ifdef HW_RVL
 
-#include "mem2.h"
-
-#define MENU_MUSIC_MAX_SIZE (8 * 1024 * 1024) // MEM2 heap room (20 MB in all)
-
 static const int musicDevices[] = { DEVICE_SD, DEVICE_USB };
 
 static mutex_t musicLock = LWP_MUTEX_NULL;
 static char (*names)[BEZEL_NAME_MAX] = NULL; // the music folder
 static int count = 0;
 static int current = -1;      // the file of names[] that is chosen, -1: none
-static u8 *oggData = NULL;    // that file, read
-static u32 oggSize = 0;
-static int loaded = -1;       // which file oggData holds
 static int state = MUSIC_STOPPED;
-static bool oggActive = false; // the OGG player plays oggData
+static bool oggActive = false; // the OGG player plays that file
 static s32 resumeAt = 0;      // where to start again (ms) after a game ran
 // The in-game menu plays its sound with the OGG player too: the music waits
 // for it to start (1) and to end (2), or for a while if it is not heard.
@@ -79,7 +74,6 @@ static void Scan()
 		names = (char (*)[BEZEL_NAME_MAX]) malloc(MAX_MENU_MUSIC * BEZEL_NAME_MAX);
 	count = names ? MenuMusicList(names, MAX_MENU_MUSIC) : 0;
 	current = -1;
-	loaded = -1; // the indexes may have changed
 }
 
 static void StopPlayer()
@@ -103,65 +97,17 @@ static bool Find(const char *name, char *path)
 	return false;
 }
 
-// Reads names[current] into oggData (the player must be stopped).
-static bool Read()
-{
-	if(current < 0 || current >= count)
-		return false;
-	if(loaded == current && oggData)
-		return true;
-
-	if(oggData)
-	{
-		mem2_free(oggData);
-		oggData = NULL;
-		oggSize = 0;
-	}
-	loaded = -1;
-
-	char path[MAXPATHLEN];
-	if(!Find(names[current], path))
-		return false;
-	FILE *file = fopen(path, "rb");
-	if(!file)
-		return false;
-	fseeko(file, 0, SEEK_END);
-	size_t size = ftello(file);
-	if(size == 0 || size > MENU_MUSIC_MAX_SIZE)
-	{
-		fclose(file);
-		return false;
-	}
-	u8 *data = (u8 *)mem2_malloc(size);
-	if(!data)
-	{
-		fclose(file);
-		return false;
-	}
-	fseeko(file, 0, SEEK_SET);
-	size_t got = fread(data, 1, size, file);
-	fclose(file);
-	if(got != size)
-	{
-		mem2_free(data);
-		return false;
-	}
-	oggData = data;
-	oggSize = size;
-	loaded = current;
-	return true;
-}
-
 static void Start(s32 at)
 {
 	StopPlayer();
 	waitEnterSound = 0;
-	if(!Read())
+	char path[MAXPATHLEN];
+	if(current < 0 || current >= count || !Find(names[current], path) ||
+		PlayOggFile(path, at, OGG_INFINITE_TIME) < 0)
 	{
 		state = MUSIC_STOPPED;
 		return;
 	}
-	PlayOgg(oggData, oggSize, at, OGG_INFINITE_TIME);
 	SetVolumeOgg(2.55f * GCSettings.MusicVolume);
 	oggActive = true;
 	state = MUSIC_PLAYING;
