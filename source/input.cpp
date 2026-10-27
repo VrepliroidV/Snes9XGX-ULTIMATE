@@ -71,9 +71,9 @@ static u16 XInputToGCPad(u32 x, bool sixButton)
 	if (sixButton)
 	{
 		// Retroflag Classic Controller-M: shoulders L = LB and R = LT; C (RT)
-		// and Z (RB) have no SNES button left
-		if (x & XI_LB) p |= PAD_TRIGGER_L;
-		if (x & XI_LT) p |= PAD_TRIGGER_R;
+		// repeats L and Z (RB) repeats R
+		if (x & (XI_LB | XI_RT)) p |= PAD_TRIGGER_L;
+		if (x & (XI_LT | XI_RB)) p |= PAD_TRIGGER_R;
 	}
 	else
 	{

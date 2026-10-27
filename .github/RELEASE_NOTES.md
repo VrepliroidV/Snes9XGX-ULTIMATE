@@ -2,7 +2,7 @@
 
 ## Novidades da 1.1.3
 
-- **Retroflag Classic Controller-M** (e outros controles de 6 botões sem analógico): o botão de ombro esquerdo é o **L** e o direito é o **R**. Antes, os dois ombros davam L, e o C e o Z davam R, porque esse controle manda o ombro direito e o C como gatilhos. O C e o Z ficam sem função no Super Nintendo. Os outros controles continuam como antes.
+- **Retroflag Classic Controller-M** (e outros controles de 6 botões sem analógico): o botão de ombro esquerdo é o **L** e o direito é o **R**. Antes, os dois ombros davam L, e o C e o Z davam R, porque esse controle manda o ombro direito e o C como gatilhos. O **C repete o L** e o **Z repete o R**. Os outros controles continuam como antes.
 
 ## Novidades da 1.1.2
 
@@ -62,7 +62,7 @@ O `Snes9xGXUltimate-GameCube.zip` traz a versão de GameCube: tem as molduras, o
 
 **Snes9x GX ULTIMATE 1.1.3**: Super Nintendo emulator for Wii, based on Snes9x TX 1.1.3 (Tanooki), a fork of Snes9x GX (Tantric).
 
-New in 1.1.3: on 6-button pads without sticks (Retroflag Classic Controller-M), the left shoulder button is L and the right one R; C and Z have no SNES button. The pad sends its shoulders as LB and LT, C as RT and Z as RB.
+New in 1.1.3: on 6-button pads without sticks (Retroflag Classic Controller-M), the left shoulder button is L and the right one R; C repeats L and Z repeats R. The pad sends its shoulders as LB and LT, C as RT and Z as RB.
 
 New in 1.1.2: the music no longer starts again when a menu button is pressed with the controller (the mini player took the d-pad too, and its previous or next button was pressed with the button of the menu).
 
