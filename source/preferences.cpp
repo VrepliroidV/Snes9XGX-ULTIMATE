@@ -18,6 +18,7 @@
 #include <mxml.h>
 
 #include "snes9xtx.h"
+#include "menumusic.h"
 #include "menu.h"
 #include "fileop.h"
 #include "video.h"
@@ -794,7 +795,7 @@ bool LoadPrefs()
 	ChangeLanguage();
 
 #ifdef HW_RVL
-	LoadMenuMusic();
+	MenuMusicInit();
 #endif
 	return prefFound;
 }

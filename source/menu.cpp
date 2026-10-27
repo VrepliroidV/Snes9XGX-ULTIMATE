@@ -28,6 +28,7 @@
 #include "filebrowser.h"
 #include "gcunzip.h"
 #include "fileop.h"
+#include "menumusic.h"
 #include "sram.h"
 #include "freeze.h"
 #include "preferences.h"
@@ -80,9 +81,9 @@ static GuiImageData * gameScreen = NULL;
 static GuiImage * gameScreenImg = NULL;
 static GuiImage * bgTopImg = NULL;
 static GuiImage * bgBottomImg = NULL;
-static GuiSound * bgMusic = NULL;
 static GuiSound * enterSound = NULL;
 static GuiWindow * mainWindow = NULL;
+static GuiWindow * playerWindow = NULL; // mini music player (menumusic.cpp)
 static GuiText * settingText = NULL;
 static GuiText * settingText2 = NULL;
 static int lastMenu = MENU_NONE;
@@ -101,8 +102,6 @@ static int progressDone = 0;
 static int progressTotal = 0;
 static bool buttonMappingCancelled = false;
 
-u8 * bg_music;
-u32 bg_music_size;
 
 /****************************************************************************
  * ResumeGui
@@ -1641,6 +1640,8 @@ static int MenuGame()
 		mainmenuBtn.SetEffect(EFFECT_SLIDE_BOTTOM | EFFECT_SLIDE_IN, 35);
 		bgBottomImg->SetEffect(EFFECT_SLIDE_BOTTOM | EFFECT_SLIDE_IN, 35);
 		btnLogo->SetEffect(EFFECT_SLIDE_BOTTOM | EFFECT_SLIDE_IN, 35);
+		if(playerWindow)
+			playerWindow->SetEffect(EFFECT_SLIDE_BOTTOM | EFFECT_SLIDE_IN, 35);
 		#ifdef HW_RVL
 		batteryBtn[0]->SetEffect(EFFECT_SLIDE_BOTTOM | EFFECT_SLIDE_IN, 35);
 		batteryBtn[1]->SetEffect(EFFECT_SLIDE_BOTTOM | EFFECT_SLIDE_IN, 35);
@@ -1771,9 +1772,6 @@ static int MenuGame()
 					gameScreenImg->ColorStripe(10);
 					mainWindow->Insert(gameScreenImg, 0);
 					ResumeGui();
-					#ifndef NO_SOUND
-					bgMusic->Play(); // startup music
-					#endif
 					menu = MENU_GAMESELECTION;
 				}
 			}
@@ -1788,6 +1786,8 @@ static int MenuGame()
 			mainmenuBtn.SetEffect(EFFECT_SLIDE_BOTTOM | EFFECT_SLIDE_OUT, 15);
 			bgBottomImg->SetEffect(EFFECT_SLIDE_BOTTOM | EFFECT_SLIDE_OUT, 15);
 			btnLogo->SetEffect(EFFECT_SLIDE_BOTTOM | EFFECT_SLIDE_OUT, 15);
+			if(playerWindow)
+				playerWindow->SetEffect(EFFECT_SLIDE_BOTTOM | EFFECT_SLIDE_OUT, 15);
 			#ifdef HW_RVL
 			batteryBtn[0]->SetEffect(EFFECT_SLIDE_BOTTOM | EFFECT_SLIDE_OUT, 15);
 			batteryBtn[1]->SetEffect(EFFECT_SLIDE_BOTTOM | EFFECT_SLIDE_OUT, 15);
@@ -2121,6 +2121,8 @@ static int MenuGameSaves(int action)
 			backBtn.SetEffect(EFFECT_SLIDE_BOTTOM | EFFECT_SLIDE_OUT, 15);
 			bgBottomImg->SetEffect(EFFECT_SLIDE_BOTTOM | EFFECT_SLIDE_OUT, 15);
 			btnLogo->SetEffect(EFFECT_SLIDE_BOTTOM | EFFECT_SLIDE_OUT, 15);
+			if(playerWindow)
+				playerWindow->SetEffect(EFFECT_SLIDE_BOTTOM | EFFECT_SLIDE_OUT, 15);
 
 			w.SetEffect(EFFECT_FADE, -15);
 
@@ -2401,6 +2403,8 @@ static int MenuGameSettings()
 			backBtn.SetEffect(EFFECT_SLIDE_BOTTOM | EFFECT_SLIDE_OUT, 15);
 			bgBottomImg->SetEffect(EFFECT_SLIDE_BOTTOM | EFFECT_SLIDE_OUT, 15);
 			btnLogo->SetEffect(EFFECT_SLIDE_BOTTOM | EFFECT_SLIDE_OUT, 15);
+			if(playerWindow)
+				playerWindow->SetEffect(EFFECT_SLIDE_BOTTOM | EFFECT_SLIDE_OUT, 15);
 
 			w.SetEffect(EFFECT_FADE, -15);
 
@@ -4864,24 +4868,6 @@ static void NextMenuMusic(char (*names)[BEZEL_NAME_MAX], int count)
 		GCSettings.MenuMusic[0] = 0;
 }
 
-// Plays the music of the setting from the start (after a change, to hear it)
-static void MenuMusicRestart()
-{
-	#if defined(HW_RVL) && !defined(NO_SOUND)
-	if(bgMusic)
-	{
-		delete bgMusic; // stops it
-		bgMusic = NULL;
-	}
-	LoadMenuMusic();
-	bgMusic = new GuiSound(bg_music, bg_music_size, SOUND_OGG);
-	bgMusic->SetVolume(GCSettings.MusicVolume);
-	bgMusic->SetLoop(true);
-	if(bg_music)
-		bgMusic->Play();
-	#endif
-}
-
 static int MenuSettingsMenu()
 {
 	int menu = MENU_NONE;
@@ -4976,11 +4962,11 @@ static int MenuSettingsMenu()
 				GCSettings.MusicVolume += 10;
 				if(GCSettings.MusicVolume > 100)
 					GCSettings.MusicVolume = 0;
-				bgMusic->SetVolume(GCSettings.MusicVolume);
+				MenuMusicSetVolume(GCSettings.MusicVolume);
 				break;
 			case 3:
 				NextMenuMusic(musicNames, musicCount);
-				MenuMusicRestart();
+				MenuMusicApplySetting();
 				break;
 			case 4:
 				GCSettings.SFXVolume += 10;
@@ -5222,6 +5208,134 @@ static int MenuSettingsEmulation()
 }
 
 /****************************************************************************
+ * Mini music player: at the bottom of the screen, under the buttons of every
+ * menu. Only the pointer uses it (it never takes the focus of the pad), and
+ * it is disabled with the rest of the menu while a window is open.
+ ***************************************************************************/
+#define PLAYER_BUTTONS 5
+#define PLAYER_BUTTON_SIZE 24
+#define PLAYER_GAP 4
+#define PLAYER_BAR_WIDTH 196
+static GuiImageData * playerData[PLAYER_BUTTONS][2];
+static GuiImage * playerImg[PLAYER_BUTTONS][2];
+static GuiButton * playerBtn[PLAYER_BUTTONS];
+static GuiImageData * playerBarData = NULL;
+static GuiImage * playerBarImg = NULL;
+static GuiWindow * playerBar = NULL;
+static GuiText * playerTxt = NULL;
+static u32 playerShown = 0; // MenuMusicChanges() shown
+
+static void MusicPlayerUpdate(void * e)
+{
+	MenuMusicTick();
+
+	for(int i = 0; i < PLAYER_BUTTONS; i++)
+	{
+		if(playerBtn[i]->GetState() != STATE_CLICKED)
+			continue;
+		playerBtn[i]->ResetState();
+		switch(i)
+		{
+			case 0: MenuMusicSkip(-1); break;
+			case 1: MenuMusicPlay(); break;
+			case 2: MenuMusicPause(); break;
+			case 3: MenuMusicStop(); break;
+			case 4: MenuMusicSkip(1); break;
+		}
+	}
+
+	u32 changes = MenuMusicChanges();
+	if(changes != playerShown)
+	{
+		playerShown = changes;
+		char name[BEZEL_NAME_MAX];
+		MenuMusicName(name, sizeof(name) - 1);
+		playerTxt->SetText(name[0] ? name : "No Music");
+		if(MenuMusicState() == MUSIC_PLAYING)
+			playerTxt->SetColor((GXColor){255, 255, 255, 255});
+		else
+			playerTxt->SetColor((GXColor){190, 190, 190, 255}); // paused or stopped
+	}
+}
+
+static void CreateMusicPlayer(GuiSound * soundOver, GuiSound * soundClick)
+{
+	#ifdef HW_RVL
+	if(MenuMusicCount() == 0)
+		return; // no music in the folder
+	static const u8 * const images[PLAYER_BUTTONS][2] = {
+		{ player_prev_png, player_prev_over_png },
+		{ player_play_png, player_play_over_png },
+		{ player_pause_png, player_pause_over_png },
+		{ player_stop_png, player_stop_over_png },
+		{ player_next_png, player_next_over_png }
+	};
+	const int width = PLAYER_BUTTONS * (PLAYER_BUTTON_SIZE + PLAYER_GAP) + 4 + PLAYER_BAR_WIDTH;
+
+	playerWindow = new GuiWindow(width, PLAYER_BUTTON_SIZE);
+	playerWindow->SetAlignment(ALIGN_CENTRE, ALIGN_BOTTOM);
+	playerWindow->SetPosition(0, -7); // under the buttons, which end 35 pixels above the bottom
+	playerWindow->SetFocus(-1); // the pad keeps moving between the buttons of the menu
+
+	for(int i = 0; i < PLAYER_BUTTONS; i++)
+	{
+		for(int over = 0; over < 2; over++)
+		{
+			playerData[i][over] = new GuiImageData(images[i][over]);
+			playerImg[i][over] = new GuiImage(playerData[i][over]);
+		}
+		playerBtn[i] = new GuiButton(PLAYER_BUTTON_SIZE, PLAYER_BUTTON_SIZE);
+		playerBtn[i]->SetAlignment(ALIGN_LEFT, ALIGN_MIDDLE);
+		playerBtn[i]->SetPosition(i * (PLAYER_BUTTON_SIZE + PLAYER_GAP), 0);
+		playerBtn[i]->SetImage(playerImg[i][0]);
+		playerBtn[i]->SetImageOver(playerImg[i][1]);
+		playerBtn[i]->SetSoundOver(soundOver);
+		playerBtn[i]->SetSoundClick(soundClick);
+		playerBtn[i]->SetTrigger(trigA);
+		playerBtn[i]->SetTrigger(trig2);
+		playerWindow->Append(playerBtn[i]);
+	}
+
+	playerBarData = new GuiImageData(player_bar_png);
+	playerBarImg = new GuiImage(playerBarData);
+	playerTxt = new GuiText("No Music", 16, (GXColor){255, 255, 255, 255});
+	playerTxt->SetMaxWidth(PLAYER_BAR_WIDTH - 20);
+	playerTxt->SetScroll(SCROLL_HORIZONTAL); // long names scroll
+	playerBar = new GuiWindow(PLAYER_BAR_WIDTH, PLAYER_BUTTON_SIZE);
+	playerBar->SetAlignment(ALIGN_RIGHT, ALIGN_MIDDLE);
+	playerBar->Append(playerBarImg);
+	playerBar->Append(playerTxt);
+	playerWindow->Append(playerBar);
+
+	playerShown = MenuMusicChanges() - 1; // shown on the first update
+	playerWindow->SetUpdateCallback(MusicPlayerUpdate);
+	mainWindow->Append(playerWindow);
+	#endif
+}
+
+static void DeleteMusicPlayer()
+{
+	if(!playerWindow)
+		return;
+	mainWindow->Remove(playerWindow);
+	delete playerWindow;
+	playerWindow = NULL;
+	delete playerBar;
+	delete playerTxt;
+	delete playerBarImg;
+	delete playerBarData;
+	for(int i = 0; i < PLAYER_BUTTONS; i++)
+	{
+		delete playerBtn[i];
+		for(int over = 0; over < 2; over++)
+		{
+			delete playerImg[i][over];
+			delete playerData[i][over];
+		}
+	}
+}
+
+/****************************************************************************
  * MainMenu
  ***************************************************************************/
 void
@@ -5319,16 +5433,23 @@ MainMenu (int menu)
 
 	#ifndef NO_SOUND
 	if(firstRun) {
-		bgMusic = new GuiSound(bg_music, bg_music_size, SOUND_OGG);
-		bgMusic->SetVolume(GCSettings.MusicVolume);
-		bgMusic->SetLoop(true);
 		enterSound = new GuiSound(enter_ogg, enter_ogg_size, SOUND_OGG);
 		enterSound->SetVolume(GCSettings.SFXVolume);
 	}
-
-	if(currentMenu == MENU_GAMESELECTION)
-		bgMusic->Play(); // startup music
 	#endif
+
+	// menu music: on again (after the sound of the in-game menu), and its player
+	MenuMusicEnter();
+	if(currentMenu == MENU_GAMESELECTION)
+	{
+		HaltGui(); // running already
+		CreateMusicPlayer(&btnSoundOver, &btnSoundClick);
+		ResumeGui();
+	}
+	else
+	{
+		CreateMusicPlayer(&btnSoundOver, &btnSoundClick);
+	}
 
 	firstRun = false;
 
@@ -5406,6 +5527,8 @@ MainMenu (int menu)
 	CancelAction();
 	HaltGui();
 
+	MenuMusicLeave();
+	DeleteMusicPlayer();
 	delete btnLogo;
 	delete gameScreenImg;
 	delete bgTopImg;
