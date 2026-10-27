@@ -13,8 +13,8 @@ Update History
 ---October 26 2026---
 
 - The menu music and its player are in the menu before a game is chosen
-  only: the in-game menu is silent, and the music goes on where it was
-  when the game is closed (Main Menu > Quit Game)
+  only: the in-game menu is silent, and the music starts again from the
+  beginning when the game is closed (Main Menu > Quit Game)
 - The music is read into memory again (files up to 12 MB): read from the
   card while it played, it started again from the beginning in some menus
 - Changing the sound effects volume does not change the music volume

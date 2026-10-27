@@ -2,7 +2,7 @@
 
 ## Novidades da 1.1.1
 
-- A música e o mini player ficam só no menu antes de escolher o jogo. O menu do jogo (Home) fica em silêncio, e a música volta de onde estava quando você fecha o jogo (Menu Principal > Sair do Jogo).
+- A música e o mini player ficam só no menu antes de escolher o jogo. O menu do jogo (Home) fica em silêncio, e a música volta a tocar do início quando você fecha o jogo (Menu Principal > Sair do Jogo).
 - A música não recomeça mais do início ao mexer em alguns menus.
 - Mudar o volume dos efeitos sonoros não muda mais o volume da música.
 
@@ -54,7 +54,7 @@ O `Snes9xGXUltimate-GameCube.zip` traz a versão de GameCube: tem as molduras, o
 
 **Snes9x GX ULTIMATE 1.1.1**: Super Nintendo emulator for Wii, based on Snes9x TX 1.1.3 (Tanooki), a fork of Snes9x GX (Tantric).
 
-New in 1.1.1: the menu music and its player are in the menu before a game is chosen only (the in-game menu is silent; the music goes on where it was when the game is closed); the music no longer starts again in some menus; the sound effects volume no longer changes the music volume.
+New in 1.1.1: the menu music and its player are in the menu before a game is chosen only (the in-game menu is silent; the music starts again from the beginning when the game is closed); the music no longer starts again in some menus; the sound effects volume no longer changes the music volume.
 
 Menu music (1.1.0):
 - OGG files in `snes9xgxultimate/music` (SD card or USB drive), any number, up to 12 MB each.

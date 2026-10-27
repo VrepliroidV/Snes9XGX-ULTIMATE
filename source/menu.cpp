@@ -1772,7 +1772,7 @@ static int MenuGame()
 					gameScreenImg = new GuiImage(screenwidth, screenheight, (GXColor){205, 201, 205, 255});
 					gameScreenImg->ColorStripe(10);
 					mainWindow->Insert(gameScreenImg, 0);
-					MenuMusicEnter(false); // the game is closed: the music goes on
+					MenuMusicEnter(false); // the game is closed: the music again, from the beginning
 					CreateMusicPlayer();
 					ResumeGui();
 					menu = MENU_GAMESELECTION;

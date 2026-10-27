@@ -6,8 +6,8 @@
  * Menu music: the OGG files of <APPFOLDER>/music (GCSettings.MenuMusic) and
  * the mini player of the menu. The file playing is read into the MEM2 heap
  * and looped by the OGG player. It plays in the menu before a game is
- * chosen: the in-game menu is silent, and the music goes on where it was
- * when the game is closed. The menu thread (settings) and the GUI thread
+ * chosen: the in-game menu is silent, and the music starts again from the
+ * beginning when the game is closed. The menu thread (settings) and the GUI thread
  * (player buttons) both use it, so everything here takes a lock.
  ***************************************************************************/
 
@@ -42,7 +42,6 @@ static u32 oggSize = 0;
 static int loaded = -1;       // which file oggData holds
 static int state = MUSIC_STOPPED;
 static bool oggActive = false; // the OGG player plays oggData
-static s32 resumeAt = 0;      // where to start again (ms) after a game ran
 static bool inGame = false;    // the in-game menu: no music
 static u32 changes = 0;
 
@@ -190,7 +189,6 @@ void MenuMusicInit()
 	Scan();
 	Pick();
 	state = current >= 0 ? MUSIC_PLAYING : MUSIC_STOPPED;
-	resumeAt = 0;
 	changes++;
 	Unlock();
 }
@@ -201,7 +199,6 @@ void MenuMusicApplySetting()
 	StopPlayer();
 	Scan();
 	Pick();
-	resumeAt = 0;
 	if(current < 0)
 		state = MUSIC_STOPPED;
 	else if(inGame)
@@ -217,7 +214,7 @@ void MenuMusicEnter(bool game)
 	Lock();
 	inGame = game;
 	if(!inGame && state == MUSIC_PLAYING && !oggActive)
-		Start(resumeAt);
+		Start(0); // from the beginning
 	changes++;
 	Unlock();
 }
@@ -225,12 +222,7 @@ void MenuMusicEnter(bool game)
 void MenuMusicLeave()
 {
 	Lock();
-	if(oggActive)
-	{
-		s32 at = GetTimeOgg();
-		resumeAt = at > 0 ? at : 0;
-		StopPlayer();
-	}
+	StopPlayer();
 	Unlock();
 }
 
@@ -248,7 +240,7 @@ void MenuMusicPlay()
 		{
 			if(current < 0)
 				current = 0;
-			Start(resumeAt); // 0 unless paused while a game ran
+			Start(0);
 		}
 		changes++;
 	}
@@ -261,11 +253,7 @@ void MenuMusicPause()
 	if(state == MUSIC_PLAYING)
 	{
 		if(oggActive)
-		{
 			PauseOgg(1);
-			s32 at = GetTimeOgg();
-			resumeAt = at > 0 ? at : 0;
-		}
 		state = MUSIC_PAUSED;
 		changes++;
 	}
@@ -276,7 +264,6 @@ void MenuMusicStop()
 {
 	Lock();
 	StopPlayer();
-	resumeAt = 0;
 	state = MUSIC_STOPPED;
 	changes++;
 	Unlock();
@@ -292,7 +279,6 @@ void MenuMusicSkip(int dir)
 			current = dir > 0 ? 0 : count - 1;
 		else
 			current = (current + dir + count) % count;
-		resumeAt = 0;
 		Start(0);
 		changes++;
 	}

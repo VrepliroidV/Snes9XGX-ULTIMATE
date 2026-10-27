@@ -26,11 +26,11 @@ enum
 int MenuMusicList(char (*names)[128], int max);
 
 // The music plays in the menu before a game is chosen, not in the in-game
-// menu: it goes on where it was when the game is closed.
+// menu: it starts again from the beginning when the game is closed.
 void MenuMusicInit();         // once the settings are loaded: picks the music of the setting
 void MenuMusicApplySetting(); // the setting changed: plays its music from the start
 void MenuMusicEnter(bool inGame); // the menu opens (inGame: the in-game menu, silent)
-void MenuMusicLeave();        // the game runs: stops, remembering the position
+void MenuMusicLeave();        // the game runs: stops
 
 // the mini player
 void MenuMusicPlay();
