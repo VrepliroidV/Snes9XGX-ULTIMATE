@@ -25,11 +25,12 @@ enum
 // names: room for max names of BEZEL_NAME_MAX (128) characters.
 int MenuMusicList(char (*names)[128], int max);
 
+// The music plays in the menu before a game is chosen, not in the in-game
+// menu: it goes on where it was when the game is closed.
 void MenuMusicInit();         // once the settings are loaded: picks the music of the setting
 void MenuMusicApplySetting(); // the setting changed: plays its music from the start
-void MenuMusicEnter();        // the menu opens: plays again if it was playing
+void MenuMusicEnter(bool inGame); // the menu opens (inGame: the in-game menu, silent)
 void MenuMusicLeave();        // the game runs: stops, remembering the position
-void MenuMusicTick();         // every frame of the menu (GUI thread)
 
 // the mini player
 void MenuMusicPlay();

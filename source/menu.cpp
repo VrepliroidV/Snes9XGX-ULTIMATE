@@ -84,6 +84,7 @@ static GuiImage * bgBottomImg = NULL;
 static GuiSound * enterSound = NULL;
 static GuiWindow * mainWindow = NULL;
 static GuiWindow * playerWindow = NULL; // mini music player (menumusic.cpp)
+static void CreateMusicPlayer(); // made in the menu before a game is chosen
 static GuiText * settingText = NULL;
 static GuiText * settingText2 = NULL;
 static int lastMenu = MENU_NONE;
@@ -1771,6 +1772,8 @@ static int MenuGame()
 					gameScreenImg = new GuiImage(screenwidth, screenheight, (GXColor){205, 201, 205, 255});
 					gameScreenImg->ColorStripe(10);
 					mainWindow->Insert(gameScreenImg, 0);
+					MenuMusicEnter(false); // the game is closed: the music goes on
+					CreateMusicPlayer();
 					ResumeGui();
 					menu = MENU_GAMESELECTION;
 				}
@@ -4973,6 +4976,7 @@ static int MenuSettingsMenu()
 				if(GCSettings.SFXVolume > 100)
 					GCSettings.SFXVolume = 0;
 				enterSound->SetVolume(GCSettings.SFXVolume);
+				MenuMusicSetVolume(GCSettings.MusicVolume); // the line above changes the OGG player
 				break;
 			case 5:
 				GCSettings.language++;
@@ -5224,11 +5228,11 @@ static GuiImage * playerBarImg = NULL;
 static GuiWindow * playerBar = NULL;
 static GuiText * playerTxt = NULL;
 static u32 playerShown = 0; // MenuMusicChanges() shown
+static GuiSound * playerSoundOver = NULL; // sounds of MainMenu()
+static GuiSound * playerSoundClick = NULL;
 
 static void MusicPlayerUpdate(void * e)
 {
-	MenuMusicTick();
-
 	for(int i = 0; i < PLAYER_BUTTONS; i++)
 	{
 		if(playerBtn[i]->GetState() != STATE_CLICKED)
@@ -5258,11 +5262,11 @@ static void MusicPlayerUpdate(void * e)
 	}
 }
 
-static void CreateMusicPlayer(GuiSound * soundOver, GuiSound * soundClick)
+static void CreateMusicPlayer()
 {
 	#ifdef HW_RVL
-	if(MenuMusicCount() == 0)
-		return; // no music in the folder
+	if(MenuMusicCount() == 0 || playerWindow)
+		return; // no music in the folder, or made already
 	static const u8 * const images[PLAYER_BUTTONS][2] = {
 		{ player_prev_png, player_prev_over_png },
 		{ player_play_png, player_play_over_png },
@@ -5289,8 +5293,8 @@ static void CreateMusicPlayer(GuiSound * soundOver, GuiSound * soundClick)
 		playerBtn[i]->SetPosition(i * (PLAYER_BUTTON_SIZE + PLAYER_GAP), 0);
 		playerBtn[i]->SetImage(playerImg[i][0]);
 		playerBtn[i]->SetImageOver(playerImg[i][1]);
-		playerBtn[i]->SetSoundOver(soundOver);
-		playerBtn[i]->SetSoundClick(soundClick);
+		playerBtn[i]->SetSoundOver(playerSoundOver);
+		playerBtn[i]->SetSoundClick(playerSoundClick);
 		playerBtn[i]->SetTrigger(trigA);
 		playerBtn[i]->SetTrigger(trig2);
 		playerWindow->Append(playerBtn[i]);
@@ -5438,17 +5442,16 @@ MainMenu (int menu)
 	}
 	#endif
 
-	// menu music: on again (after the sound of the in-game menu), and its player
-	MenuMusicEnter();
+	// menu music and its player: before a game is chosen only (the in-game
+	// menu is silent; they come back when the game is closed)
+	playerSoundOver = &btnSoundOver;
+	playerSoundClick = &btnSoundClick;
+	MenuMusicEnter(currentMenu != MENU_GAMESELECTION);
 	if(currentMenu == MENU_GAMESELECTION)
 	{
 		HaltGui(); // running already
-		CreateMusicPlayer(&btnSoundOver, &btnSoundClick);
+		CreateMusicPlayer();
 		ResumeGui();
-	}
-	else
-	{
-		CreateMusicPlayer(&btnSoundOver, &btnSoundClick);
 	}
 
 	firstRun = false;
@@ -5529,6 +5532,7 @@ MainMenu (int menu)
 
 	MenuMusicLeave();
 	DeleteMusicPlayer();
+	playerSoundOver = playerSoundClick = NULL;
 	delete btnLogo;
 	delete gameScreenImg;
 	delete bgTopImg;

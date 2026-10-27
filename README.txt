@@ -9,11 +9,22 @@ Snes9x TX is a fork of Snes9x GX by Tantric: https://github.com/dborth/snes9xgx
 Update History
 --------------
 
+---Snes9x GX ULTIMATE 1.1.1 (VrepliroidV)---
+---October 26 2026---
+
+- The menu music and its player are in the menu before a game is chosen
+  only: the in-game menu is silent, and the music goes on where it was
+  when the game is closed (Main Menu > Quit Game)
+- The music is read into memory again (files up to 12 MB): read from the
+  card while it played, it started again from the beginning in some menus
+- Changing the sound effects volume does not change the music volume
+- Downloads: https://github.com/VrepliroidV/Snes9XGX-ULTIMATE/releases
+
 ---Snes9x GX ULTIMATE 1.1.0 (VrepliroidV)---
 ---October 26 2026---
 
 - Menu music from the folder snes9xgxultimate/music (SD card or USB
-  drive): any number of OGG files, of any size, read as they play
+  drive): any number of OGG files
 - Settings > Menu > Menu Music: no music, Random (one file of the folder at
   every start, the default) or one of the files. Changing it plays the
   music at once

@@ -4,11 +4,11 @@
  * menumusic.cpp
  *
  * Menu music: the OGG files of <APPFOLDER>/music (GCSettings.MenuMusic) and
- * the mini player of the menu. The OGG player reads the file playing from
- * the SD card or USB drive as it plays, and loops it (so files of any size
- * play, and changing the music does not stop the menu). The menu thread
- * (settings) and the GUI thread (player buttons) both use it, so everything
- * here takes a lock.
+ * the mini player of the menu. The file playing is read into the MEM2 heap
+ * and looped by the OGG player. It plays in the menu before a game is
+ * chosen: the in-game menu is silent, and the music goes on where it was
+ * when the game is closed. The menu thread (settings) and the GUI thread
+ * (player buttons) both use it, so everything here takes a lock.
  ***************************************************************************/
 
 #include <gccore.h>
@@ -22,11 +22,14 @@
 #include "snes9xtx.h"
 #include "menumusic.h"
 #include "fileop.h"
-#include "filebrowser.h"
 #include "utils/bezel.h"
 #include "utils/oggplayer.h"
 
 #ifdef HW_RVL
+
+#include "mem2.h"
+
+#define MENU_MUSIC_MAX_SIZE (12 * 1024 * 1024) // MEM2 heap room (20 MB in all, ~6 MB in use)
 
 static const int musicDevices[] = { DEVICE_SD, DEVICE_USB };
 
@@ -34,14 +37,13 @@ static mutex_t musicLock = LWP_MUTEX_NULL;
 static char (*names)[BEZEL_NAME_MAX] = NULL; // the music folder
 static int count = 0;
 static int current = -1;      // the file of names[] that is chosen, -1: none
+static u8 *oggData = NULL;    // that file, read
+static u32 oggSize = 0;
+static int loaded = -1;       // which file oggData holds
 static int state = MUSIC_STOPPED;
-static bool oggActive = false; // the OGG player plays that file
+static bool oggActive = false; // the OGG player plays oggData
 static s32 resumeAt = 0;      // where to start again (ms) after a game ran
-// The in-game menu plays its sound with the OGG player too: the music waits
-// for it to start (1) and to end (2), or for a while if it is not heard.
-static int waitEnterSound = 0;
-static u64 waitSince = 0;
-#define ENTER_SOUND_WAIT_MS 3000
+static bool inGame = false;    // the in-game menu: no music
 static u32 changes = 0;
 
 static void Lock()
@@ -74,6 +76,7 @@ static void Scan()
 		names = (char (*)[BEZEL_NAME_MAX]) malloc(MAX_MENU_MUSIC * BEZEL_NAME_MAX);
 	count = names ? MenuMusicList(names, MAX_MENU_MUSIC) : 0;
 	current = -1;
+	loaded = -1; // the indexes may have changed
 }
 
 static void StopPlayer()
@@ -97,17 +100,64 @@ static bool Find(const char *name, char *path)
 	return false;
 }
 
+// Reads names[current] into oggData (the player must be stopped).
+static bool Read()
+{
+	if(current < 0 || current >= count)
+		return false;
+	if(loaded == current && oggData)
+		return true;
+
+	if(oggData)
+	{
+		mem2_free(oggData);
+		oggData = NULL;
+		oggSize = 0;
+	}
+	loaded = -1;
+
+	char path[MAXPATHLEN];
+	if(!Find(names[current], path))
+		return false;
+	FILE *file = fopen(path, "rb");
+	if(!file)
+		return false;
+	fseeko(file, 0, SEEK_END);
+	size_t size = ftello(file);
+	if(size == 0 || size > MENU_MUSIC_MAX_SIZE)
+	{
+		fclose(file);
+		return false;
+	}
+	u8 *data = (u8 *)mem2_malloc(size);
+	if(!data)
+	{
+		fclose(file);
+		return false;
+	}
+	fseeko(file, 0, SEEK_SET);
+	size_t got = fread(data, 1, size, file);
+	fclose(file);
+	if(got != size)
+	{
+		mem2_free(data);
+		return false;
+	}
+	oggData = data;
+	oggSize = size;
+	loaded = current;
+	return true;
+}
+
 static void Start(s32 at)
 {
 	StopPlayer();
-	waitEnterSound = 0;
-	char path[MAXPATHLEN];
-	if(current < 0 || current >= count || !Find(names[current], path) ||
-		PlayOggFile(path, at, OGG_INFINITE_TIME) < 0)
+	if(!Read())
 	{
 		state = MUSIC_STOPPED;
 		return;
 	}
+	PlayOgg(oggData, oggSize, at, OGG_INFINITE_TIME);
 	SetVolumeOgg(2.55f * GCSettings.MusicVolume);
 	oggActive = true;
 	state = MUSIC_PLAYING;
@@ -152,27 +202,22 @@ void MenuMusicApplySetting()
 	Scan();
 	Pick();
 	resumeAt = 0;
-	if(current >= 0)
-		Start(0);
-	else
+	if(current < 0)
 		state = MUSIC_STOPPED;
+	else if(inGame)
+		state = MUSIC_PLAYING; // once the game is closed
+	else
+		Start(0);
 	changes++;
 	Unlock();
 }
 
-void MenuMusicEnter()
+void MenuMusicEnter(bool game)
 {
 	Lock();
-	if(state == MUSIC_PLAYING && !oggActive)
-	{
-		if(SNESROMSize > 0)
-		{
-			waitEnterSound = 1; // MenuMusicTick() starts it after the sound
-			waitSince = gettime();
-		}
-		else
-			Start(resumeAt);
-	}
+	inGame = game;
+	if(!inGame && state == MUSIC_PLAYING && !oggActive)
+		Start(resumeAt);
 	changes++;
 	Unlock();
 }
@@ -180,27 +225,12 @@ void MenuMusicEnter()
 void MenuMusicLeave()
 {
 	Lock();
-	waitEnterSound = 0;
 	if(oggActive)
 	{
 		s32 at = GetTimeOgg();
 		resumeAt = at > 0 ? at : 0;
 		StopPlayer();
 	}
-	Unlock();
-}
-
-void MenuMusicTick()
-{
-	if(!waitEnterSound)
-		return;
-	Lock();
-	bool running = (StatusOgg() == OGG_STATUS_RUNNING);
-	if(waitEnterSound == 1 && running)
-		waitEnterSound = 2; // the sound started
-	else if((waitEnterSound == 2 && !running) ||
-		(waitEnterSound == 1 && diff_msec(waitSince, gettime()) > ENTER_SOUND_WAIT_MS))
-		Start(resumeAt);
 	Unlock();
 }
 
@@ -236,7 +266,6 @@ void MenuMusicPause()
 			s32 at = GetTimeOgg();
 			resumeAt = at > 0 ? at : 0;
 		}
-		waitEnterSound = 0;
 		state = MUSIC_PAUSED;
 		changes++;
 	}
@@ -247,7 +276,6 @@ void MenuMusicStop()
 {
 	Lock();
 	StopPlayer();
-	waitEnterSound = 0;
 	resumeAt = 0;
 	state = MUSIC_STOPPED;
 	changes++;
@@ -309,9 +337,8 @@ u32 MenuMusicChanges()
 int MenuMusicList(char (*list)[128], int max) { return 0; }
 void MenuMusicInit() {}
 void MenuMusicApplySetting() {}
-void MenuMusicEnter() {}
+void MenuMusicEnter(bool game) {}
 void MenuMusicLeave() {}
-void MenuMusicTick() {}
 void MenuMusicPlay() {}
 void MenuMusicPause() {}
 void MenuMusicStop() {}

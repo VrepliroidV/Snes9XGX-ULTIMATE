@@ -1,11 +1,17 @@
-**Snes9x GX ULTIMATE 1.1.0**: emulador de Super Nintendo para Wii, baseado no [Snes9x TX 1.1.3](https://github.com/saulfabregwiivc/Snes9xTX) (Tanooki), que é um fork do [Snes9x GX](https://github.com/dborth/snes9xgx) (Tantric). *English below.*
+**Snes9x GX ULTIMATE 1.1.1**: emulador de Super Nintendo para Wii, baseado no [Snes9x TX 1.1.3](https://github.com/saulfabregwiivc/Snes9xTX) (Tanooki), que é um fork do [Snes9x GX](https://github.com/dborth/snes9xgx) (Tantric). *English below.*
 
-## Novidades da 1.1.0: música no menu
+## Novidades da 1.1.1
 
-- **Pasta de músicas**: coloque arquivos `.ogg` em `snes9xgxultimate/music`, no SD ou no pendrive. Quantas músicas quiser, de qualquer tamanho e com qualquer nome. Elas são lidas direto do cartão enquanto tocam.
+- A música e o mini player ficam só no menu antes de escolher o jogo. O menu do jogo (Home) fica em silêncio, e a música volta de onde estava quando você fecha o jogo (Menu Principal > Sair do Jogo).
+- A música não recomeça mais do início ao mexer em alguns menus.
+- Mudar o volume dos efeitos sonoros não muda mais o volume da música.
+
+## Música no menu (1.1.0)
+
+- **Pasta de músicas**: coloque arquivos `.ogg` em `snes9xgxultimate/music`, no SD ou no pendrive. Quantas músicas quiser, com qualquer nome, de até 12 MB cada (uns 10 minutos em 160 kbps).
 - **Settings > Menu > Música do Menu**: **Sem Música**, **Aleatória** (sorteia uma música da pasta cada vez que o emulador abre, o padrão) ou cada música da pasta pelo nome. Ao trocar, a música nova já começa a tocar.
 - **Mini player** embaixo da tela, abaixo dos botões do menu: voltar, play, pause, stop, avançar e o nome da música (nomes longos rolam). Ele funciona com o ponteiro do Wiimote, não muda a navegação pelo direcional e só aparece quando a pasta tem músicas. Voltar e avançar passam pelas músicas da pasta em ordem.
-- A música continua também no menu do jogo, de onde estava, depois do som de entrada desse menu. O nome fica cinza com a música pausada ou parada.
+- O nome fica cinza com a música pausada ou parada.
 - O `bg_music.ogg` na pasta do app não é mais usado: coloque a música na pasta `music`.
 
 ## O que já vinha na 1.0.0
@@ -46,12 +52,14 @@ O `Snes9xGXUltimate-GameCube.zip` traz a versão de GameCube: tem as molduras, o
 
 ## English
 
-**Snes9x GX ULTIMATE 1.1.0**: Super Nintendo emulator for Wii, based on Snes9x TX 1.1.3 (Tanooki), a fork of Snes9x GX (Tantric).
+**Snes9x GX ULTIMATE 1.1.1**: Super Nintendo emulator for Wii, based on Snes9x TX 1.1.3 (Tanooki), a fork of Snes9x GX (Tantric).
 
-New in 1.1.0, menu music:
-- OGG files in `snes9xgxultimate/music` (SD card or USB drive), any number and any size, read as they play.
+New in 1.1.1: the menu music and its player are in the menu before a game is chosen only (the in-game menu is silent; the music goes on where it was when the game is closed); the music no longer starts again in some menus; the sound effects volume no longer changes the music volume.
+
+Menu music (1.1.0):
+- OGG files in `snes9xgxultimate/music` (SD card or USB drive), any number, up to 12 MB each.
 - Settings > Menu > Menu Music: No Music, Random (one file of the folder at every start, the default) or one of the files; changing it plays the music at once.
-- A mini player at the bottom of the menus, under the buttons: previous, play, pause, stop, next and the name of the music. It is used with the Wii remote pointer and is shown when the folder has music. The music goes on in the in-game menu too.
+- A mini player at the bottom of the menus, under the buttons: previous, play, pause, stop, next and the name of the music. It is used with the Wii remote pointer and is shown when the folder has music.
 - `bg_music.ogg` in the app folder is not played any more: put the music in the music folder.
 
 Already in 1.0.0:
