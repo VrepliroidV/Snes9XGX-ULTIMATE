@@ -9,6 +9,24 @@ Snes9x TX is a fork of Snes9x GX by Tantric: https://github.com/dborth/snes9xgx
 Update History
 --------------
 
+---Snes9x GX ULTIMATE 1.1.0 (VrepliroidV)---
+---October 26 2026---
+
+- Menu music from the folder snes9xgxultimate/music (SD card or USB
+  drive): any number of OGG files, of any size, read as they play
+- Settings > Menu > Menu Music: no music, Random (one file of the folder at
+  every start, the default) or one of the files. Changing it plays the
+  music at once
+- Mini music player at the bottom of the menus, under the buttons:
+  previous, play, pause, stop, next and the name of the music (long names
+  scroll). It is used with the Wii remote pointer and is shown when the
+  folder has music
+- The music goes on in the in-game menu too, where it was, after the
+  sound of that menu
+- bg_music.ogg in the app folder is not played any more: put the music in
+  the music folder
+- Downloads: https://github.com/VrepliroidV/Snes9XGX-ULTIMATE/releases
+
 ---Snes9x GX ULTIMATE 1.0.0 (VrepliroidV)---
 ---October 26 2026---
 

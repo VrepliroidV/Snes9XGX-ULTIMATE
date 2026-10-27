@@ -21,13 +21,16 @@ Super Nintendo emulator for Wii and GameCube by VrepliroidV, based on Snes9x TX
 - Controles USB do tipo Xbox 360 (XInput) e receptores 2.4 GHz no Wii, até 4.
   / Xbox 360 (XInput) USB controllers and 2.4 GHz receivers, up to 4.
 - Opção de região NTSC (Lie to PAL). / NTSC (Lie to PAL) region option.
+- Música no menu: os `.ogg` da pasta `snes9xgxultimate/music`, escolhidos nas
+  configurações, com um mini player (voltar, play, pause, stop, avançar). /
+  Menu music from the OGG files of `snes9xgxultimate/music`, with a mini player.
 
 ## Instalação / Install
 
 Extraia o `Snes9xGXUltimate-Wii.zip` da página de
 [Releases](../../releases) na raiz do SD ou do pendrive. O emulador fica em
 `apps/snes9xgxultimate` e as ROMs, saves, cheats e molduras em
-`snes9xgxultimate/`. Ele não mexe nas pastas do Snes9x TX nem do Snes9x GX.
+`snes9xgxultimate/` (com a pasta `music` para as músicas do menu). Ele não mexe nas pastas do Snes9x TX nem do Snes9x GX.
 
 Extract `Snes9xGXUltimate-Wii.zip` from [Releases](../../releases) to the root
 of the SD card or USB drive. The app is in `apps/snes9xgxultimate`, its data in
