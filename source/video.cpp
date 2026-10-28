@@ -1105,6 +1105,35 @@ static void UpdateQuad()
 		UpdateSharp(right - left, top - bottom);
 }
 
+// The frame rate (Show Frame Rate) and the messages of Snes9x, drawn in the
+// picture at its bottom right once the auto crop has measured the frame (they
+// would be graphics in the black border to it, which it then never crops) and
+// inside the part that is shown.
+static void DrawMessages()
+{
+	int width = vwidth, height = vheight;
+
+	if (autoCropMode != AUTOCROP_OFF)
+	{
+		const int vscale = vheight > SNES_HEIGHT_EXTENDED ? 2 : 1;
+		const int left = (autoCrop.applied[AUTOCROP_LEFT] * vwidth + AUTOCROP_UNITS - 1) / AUTOCROP_UNITS;
+		const int right = (autoCrop.applied[AUTOCROP_RIGHT] * vwidth + AUTOCROP_UNITS - 1) / AUTOCROP_UNITS;
+		const int top = autoCrop.applied[AUTOCROP_TOP] * vscale;
+		const int bottom = autoCrop.applied[AUTOCROP_BOTTOM] * vscale;
+		if (left + right + 64 <= vwidth)
+			width = vwidth - right;
+		if (top + bottom + 32 <= vheight)
+			height = vheight - bottom;
+	}
+
+	const int savedWidth = IPPU.RenderedScreenWidth, savedHeight = IPPU.RenderedScreenHeight;
+	IPPU.RenderedScreenWidth = width;
+	IPPU.RenderedScreenHeight = height;
+	S9xDisplayMessages(GFX.Screen, GFX.RealPPL, width, height, 1);
+	IPPU.RenderedScreenWidth = savedWidth;
+	IPPU.RenderedScreenHeight = savedHeight;
+}
+
 // Measures the frame in GFX.Screen. Returns true when the crop changed.
 static bool AutoCropMeasure()
 {
@@ -1301,6 +1330,8 @@ update_video (int width, int height)
 		autoCropDirty = true;
 	if (autoCropDirty)
 		UpdateQuad();
+	if (Settings.DisplayFrameRate)
+		DrawMessages();
 #ifdef HW_RVL
 	// convert image to texture
 	if (GCSettings.VideoFilter != FILTER_NONE && vheight <= 239 && vwidth <= 256) // don't do filtering on game textures > 256 x 239

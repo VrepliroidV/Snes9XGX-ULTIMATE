@@ -592,7 +592,9 @@ int main(int argc, char *argv[])
 		Settings.SupportHiRes = (GCSettings.HiResMode == 1);
 		Settings.SkipFrames = (GCSettings.FrameSkip ? AUTO_FRAMERATE : 0);
 		Settings.DisplayFrameRate = (GCSettings.ShowFrameRate == 1);
-		Settings.AutoDisplayMessages = (Settings.DisplayFrameRate ? true : false);
+		// the frame rate is drawn in the picture by update_video (video.cpp),
+		// after the auto crop measured it, inside the part that is shown
+		Settings.AutoDisplayMessages = false;
 		Settings.MaxSpriteTilesPerLine = (GCSettings.NoSpriteLimit ? 128 : 34);
 		Settings.MultiPlayer5Master = (GCSettings.Controller == CTRL_PAD4 ? true : false);
 		Settings.SuperScopeMaster = (GCSettings.Controller == CTRL_SCOPE ? true : false);

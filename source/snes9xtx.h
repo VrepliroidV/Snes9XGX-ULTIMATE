@@ -22,7 +22,7 @@
 #include "utils/autocrop.h"
 
 #define APPNAME 			"Snes9x GX ULTIMATE"
-#define APPVERSION 			"1.1.3" // based on Snes9x TX 1.1.3
+#define APPVERSION 			"1.1.4" // based on Snes9x TX 1.1.3
 #define APPFOLDER 			"snes9xgxultimate"
 
 // Menu music (GCSettings.MenuMusic): none, one of the OGG files of

@@ -1,4 +1,8 @@
-**Snes9x GX ULTIMATE 1.1.3**: emulador de Super Nintendo para Wii, baseado no [Snes9x TX 1.1.3](https://github.com/saulfabregwiivc/Snes9xTX) (Tanooki), que é um fork do [Snes9x GX](https://github.com/dborth/snes9xgx) (Tantric). *English below.*
+**Snes9x GX ULTIMATE 1.1.4**: emulador de Super Nintendo para Wii, baseado no [Snes9x TX 1.1.3](https://github.com/saulfabregwiivc/Snes9xTX) (Tanooki), que é um fork do [Snes9x GX](https://github.com/dborth/snes9xgx) (Tantric). *English below.*
+
+## Novidades da 1.1.4
+
+- **Show Frame Rate com Auto Crop**: o contador de FPS não impede mais o corte das bordas pretas. O Snes9x desenha o FPS dentro da imagem do jogo, no canto de baixo à direita, e o Auto Crop o via como parte do jogo na borda de baixo, que então nunca era cortada. Agora o FPS é desenhado depois que o Auto Crop mede a imagem, e dentro da parte que aparece na tela.
 
 ## Novidades da 1.1.3
 
@@ -60,7 +64,9 @@ O `Snes9xGXUltimate-GameCube.zip` traz a versão de GameCube: tem as molduras, o
 
 ## English
 
-**Snes9x GX ULTIMATE 1.1.3**: Super Nintendo emulator for Wii, based on Snes9x TX 1.1.3 (Tanooki), a fork of Snes9x GX (Tantric).
+**Snes9x GX ULTIMATE 1.1.4**: Super Nintendo emulator for Wii, based on Snes9x TX 1.1.3 (Tanooki), a fork of Snes9x GX (Tantric).
+
+New in 1.1.4: Show Frame Rate no longer stops Auto Crop. Snes9x draws the frame rate in the game picture (bottom right), where Auto Crop saw it as part of the game in the bottom border, which it then never cropped; it is now drawn after Auto Crop measured the picture, inside the part shown on screen.
 
 New in 1.1.3: on 6-button pads without sticks (Retroflag Classic Controller-M), the left shoulder button is L and the right one R; C repeats L and Z repeats R. The pad sends its shoulders as LB and LT, C as RT and Z as RB.
 
