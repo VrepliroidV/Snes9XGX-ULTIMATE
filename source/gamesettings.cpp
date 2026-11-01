@@ -68,7 +68,10 @@ static const GameField fields[] =
 
 #define FIELD_COUNT (sizeof(fields) / sizeof(fields[0]))
 
-static SGCSettings globals; // global values of the fields while a game uses its own
+// global values of the fields: taken when a game is loaded, so what is changed
+// afterwards can still go to that game alone
+static SGCSettings globals;
+static bool globalsTaken = false;
 static bool active = false;
 
 static inline void *FieldIn(SGCSettings *s, const GameField &f)
@@ -193,10 +196,12 @@ void GameSettingsLoad()
 		CopyFields(&GCSettings, &globals);
 		active = false;
 	}
+	globalsTaken = false;
 
 	if(GamePath(path))
 	{
-		CopyFields(&globals, &GCSettings);
+		CopyFields(&globals, &GCSettings); // the global options as the game starts with them
+		globalsTaken = true;
 		if(ReadGameFile(path))
 		{
 			active = true;
@@ -214,7 +219,14 @@ bool GameSettingsEnable()
 	if(SNESROMSize == 0)
 		return false;
 
-	CopyFields(&globals, &GCSettings); // the current values are the global ones
+	// the options changed since the game was loaded are the game's own: the
+	// global ones stay as they were then (they are also what the preferences
+	// file gets back, if it was written with the changes in between)
+	if(!globalsTaken)
+	{
+		CopyFields(&globals, &GCSettings);
+		globalsTaken = true;
+	}
 	active = true;
 	GameSettingsSave();
 	return true;

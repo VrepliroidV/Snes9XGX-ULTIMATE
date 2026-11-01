@@ -1,4 +1,9 @@
-**Snes9x GX ULTIMATE 1.1.4**: emulador de Super Nintendo para Wii, baseado no [Snes9x TX 1.1.3](https://github.com/saulfabregwiivc/Snes9xTX) (Tanooki), que é um fork do [Snes9x GX](https://github.com/dborth/snes9xgx) (Tantric). *English below.*
+**Snes9x GX ULTIMATE 1.1.5**: emulador de Super Nintendo para Wii, baseado no [Snes9x TX 1.1.3](https://github.com/saulfabregwiivc/Snes9xTX) (Tanooki), que é um fork do [Snes9x GX](https://github.com/dborth/snes9xgx) (Tantric). *English below.*
+
+## Novidades da 1.1.5
+
+- **Controle USB sem fio que desliga sozinho**: quando o controle desliga para poupar bateria e é ligado de novo, ele volta a funcionar na hora, sem precisar tirar e recolocar o receptor. Se o Wii recusar abrir o receptor num momento, o emulador tenta de novo alguns segundos depois. (A mesma correção do Genesis Plus GX ULTIMATE 1.2.1, testada com o receptor do Retroflag.)
+- **Correção: Por Jogo**. As configurações que você muda **antes** de apertar **Por Jogo** agora ficam só para aquele jogo. Antes elas também viravam as configurações globais, e os outros jogos abriam com elas. Se isso aconteceu com você, abra uma vez um jogo sem Por Jogo e acerte as configurações globais do jeito que você quer. Os arquivos `<jogo>.cfg` de cada jogo estão certos e não precisam ser apagados.
 
 ## Novidades da 1.1.4
 
@@ -43,7 +48,7 @@
 
 ## Instalação
 
-1. Baixe o `Snes9xGXUltimate-Wii.zip` e extraia na raiz do cartão SD ou do pendrive. Ele cria `apps/snes9xgxultimate` (o emulador) e a pasta `snes9xgxultimate` com `roms`, `saves`, `cheats`, `bezels` e `music`. Quem já tem a 1.0.0 pode extrair por cima: as configurações e os saves continuam.
+1. Baixe o `Snes9xGXUltimate-Wii.zip` e extraia na raiz do cartão SD ou do pendrive. Ele cria `apps/snes9xgxultimate` (o emulador) e a pasta `snes9xgxultimate` com `roms`, `saves`, `cheats`, `bezels` e `music`. Quem já tem uma versão anterior pode extrair por cima: as configurações e os saves continuam.
 2. É um app separado: pode ficar instalado junto com o Snes9x TX ou o Snes9x GX, e não mexe nas pastas deles. Para usar seus saves antigos, copie os arquivos de `snes9xtx/saves` (ou `snes9x/saves`) para `snes9xgxultimate/saves`. As ROMs podem ser copiadas para `snes9xgxultimate/roms`, ou escolha outra pasta em Settings > Saving & Loading.
 
 O `Snes9xGXUltimate-GameCube.zip` traz a versão de GameCube: tem as molduras, o Auto Crop, o overclock automático, as configurações por jogo, os cheats e as melhorias de região, mas não os controles USB nem a música do menu.
@@ -64,7 +69,12 @@ O `Snes9xGXUltimate-GameCube.zip` traz a versão de GameCube: tem as molduras, o
 
 ## English
 
-**Snes9x GX ULTIMATE 1.1.4**: Super Nintendo emulator for Wii, based on Snes9x TX 1.1.3 (Tanooki), a fork of Snes9x GX (Tantric).
+**Snes9x GX ULTIMATE 1.1.5**: Super Nintendo emulator for Wii, based on Snes9x TX 1.1.3 (Tanooki), a fork of Snes9x GX (Tantric).
+
+New in 1.1.5:
+
+- **Wireless USB pads that turn themselves off** work again as soon as they are turned back on, without plugging the receiver in again. A receiver that the Wii does not let the emulator open is tried again a few seconds later. (The same fix as in Genesis Plus GX ULTIMATE 1.2.1, tested with the Retroflag receiver.)
+- **Fixed: Per-Game**. Settings changed before pressing Per-Game now stay with that game only; they used to become the global settings too, so every other game got them. If that happened to you, load a game without Per-Game once and set the global settings back.
 
 New in 1.1.4: Show Frame Rate no longer stops Auto Crop. Snes9x draws the frame rate in the game picture (bottom right), where Auto Crop saw it as part of the game in the bottom border, which it then never cropped; it is now drawn after Auto Crop measured the picture, inside the part shown on screen.
 
@@ -85,7 +95,7 @@ Already in 1.0.0:
 - **PNG bezels** (Game Settings > Video > Bezel), in 480i and 480p (not in 240p). The transparent window in the middle of the PNG is found by itself and the game fills it, with the bezel drawn over its edges; a PNG without a window is a background behind the game. Any PNG size works (1920x1080 RetroArch bezels included). Choices: Off, Default (TV) (the TV frame built into the emulator, on by default), Auto (`<game>.png`, else `default.png`, else the TV frame) and each PNG in `snes9xgxultimate/bezels` on the SD card or USB drive. Kept per game too.
 - Automatic CPU overclock, per-game settings, Auto Crop of black borders, cheats typed in the menu, Xbox 360 (XInput) USB controllers and 2.4 GHz receivers read as GameCube controllers (up to 4, L + Select + Start opens the menu), the region option and NTSC (Lie to PAL).
 
-Install: extract `Snes9xGXUltimate-Wii.zip` to the root of the SD card or USB drive (over 1.0.0 too: settings and saves stay). It is a separate app (`apps/snes9xgxultimate`) with its own data folder (`snes9xgxultimate`), so it can sit next to Snes9x TX or Snes9x GX; copy your saves from `snes9xtx/saves` if you want to keep them.
+Install: extract `Snes9xGXUltimate-Wii.zip` to the root of the SD card or USB drive (over an earlier version too: settings and saves stay). It is a separate app (`apps/snes9xgxultimate`) with its own data folder (`snes9xgxultimate`), so it can sit next to Snes9x TX or Snes9x GX; copy your saves from `snes9xtx/saves` if you want to keep them.
 
 ---
 

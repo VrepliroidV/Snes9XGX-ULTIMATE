@@ -20,7 +20,9 @@ bool GameSettingsActive();
 // global options, then the game's own ones if it has them.
 void GameSettingsLoad();
 
-// Keeps the current options for the loaded game from now on.
+// Keeps the current options for the loaded game from now on; the global ones
+// go back to what they were when the game was loaded (what was changed since
+// then was meant for this game).
 bool GameSettingsEnable();
 
 // The loaded game uses the global options again; its file is deleted.

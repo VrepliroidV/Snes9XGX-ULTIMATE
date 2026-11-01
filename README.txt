@@ -9,6 +9,26 @@ Snes9x TX is a fork of Snes9x GX by Tantric: https://github.com/dborth/snes9xgx
 Update History
 --------------
 
+---Snes9x GX ULTIMATE 1.1.5 (VrepliroidV)---
+---November 1 2026---
+
+- Wireless USB pads that turn themselves off work again when they are
+  turned back on, without plugging the receiver in again. When the reads
+  of a pad fail, the input endpoint is cleared and the start-up requests
+  and the LED message are sent again before reading; after many failures
+  in a row the device is opened again from scratch, later and later while
+  it keeps failing. A device that cannot be opened, or whose descriptors
+  IOS refuses, is tried again after a wait instead of being given up.
+- Per-Game: the settings changed before turning it on stay with the game.
+  The global values are now the ones the game was loaded with (they were
+  the current ones, so the changes made for the game became global too).
+
+---Snes9x GX ULTIMATE 1.1.4 (VrepliroidV)---
+---October 28 2026---
+
+- Show Frame Rate no longer stops Auto Crop: the frame rate is drawn
+  after Auto Crop measured the picture, inside the part that is shown.
+
 ---Snes9x GX ULTIMATE 1.1.3 (VrepliroidV)---
 ---October 27 2026---
 

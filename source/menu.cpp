@@ -2388,7 +2388,7 @@ static int MenuGameSettings()
 			if(!GameSettingsActive())
 			{
 				if(GameSettingsEnable())
-					InfoPrompt("From now on, the video, audio and emulation settings you change are kept for this game only.");
+					InfoPrompt("The settings changed since loading this game, and from now on, are kept for this game only.");
 			}
 			else if(WindowPrompt("Per-Game Settings", "Use the global settings for this game again?", "Yes", "No"))
 			{

@@ -757,8 +757,8 @@ msgstr "Por Jogo: Não"
 msgid "Per-Game Settings"
 msgstr "Definições por Jogo"
 
-msgid "From now on, the video, audio and emulation settings you change are kept for this game only."
-msgstr "A partir de agora, as definições de vídeo, som e emulação que mudar valem só para este jogo."
+msgid "The settings changed since loading this game, and from now on, are kept for this game only."
+msgstr "As definições que mudou desde que abriu este jogo, e as que mudar a partir de agora, valem só para este jogo."
 
 msgid "Use the global settings for this game again?"
 msgstr "Voltar a usar as definições gerais neste jogo?"
