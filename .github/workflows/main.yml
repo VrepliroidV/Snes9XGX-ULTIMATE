@@ -90,7 +90,8 @@ jobs:
       run: |
         command -v git >/dev/null || (apt-get update && apt-get install -y --no-install-recommends git ca-certificates)
         cd dist/Snes9xGXUltimate
-        git init -q -b dev-build
+        git init -q
+        git checkout -q -b dev-build   # (the git of this container has no init -b)
         git config user.name "github-actions[bot]"
         git config user.email "41898299+github-actions[bot]@users.noreply.github.com"
         git add -A
