@@ -64,7 +64,9 @@ int MenuMusicList(char (*list)[BEZEL_NAME_MAX], int max)
 	for (unsigned int i = 0; i < sizeof(musicDevices) / sizeof(musicDevices[0]); i++)
 	{
 		snprintf(dir, sizeof(dir), "%s%s", pathPrefix[musicDevices[i]], MENU_MUSIC_FOLDER);
+		STARTUP_NOTE("music: listing %s", dir);
 		n = bezel_list_ext(dir, ".ogg", list, n, max);
+		STARTUP_NOTE("music: %d files", n);
 	}
 	return n;
 }

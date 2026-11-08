@@ -10,6 +10,7 @@
  ***************************************************************************/
 
 #include <gccore.h>
+#include <ogc/lwp_watchdog.h>
 #include <ogcsys.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -132,8 +133,17 @@ HaltGui()
 	guiHalt = true;
 
 	// wait for thread to finish
+	u64 haltStart = gettime();
+	bool haltNoted = false;
 	while(!LWP_ThreadIsSuspended(guithread))
+	{
 		usleep(THREAD_SLEEP);
+		if(!haltNoted && ticks_to_millisecs(gettime() - haltStart) > 2000)
+		{
+			STARTUP_NOTE("gui: still not halted after 2 s");
+			haltNoted = true;
+		}
+	}
 }
 
 static void ResetText()

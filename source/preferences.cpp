@@ -695,7 +695,11 @@ LoadPrefsFromMethod (char * path)
 	offset = LoadFile(filepath, SILENT);
 
 	if (offset > 0)
+	{
+		STARTUP_NOTE("prefs: decoding");
 		retval = decodePrefsData ();
+		STARTUP_NOTE("prefs: decoded (%d)", retval);
+	}
 
 	FreeSaveBuffer ();
 	
@@ -762,6 +766,7 @@ bool LoadPrefs()
 	if(prefFound) {
 		FixInvalidSettings();
 	}
+	STARTUP_NOTE("prefs: checked, load device %d, video mode %d, language %d", GCSettings.LoadMethod, GCSettings.videomode, GCSettings.language);
 	
 	// Snes9x GX ULTIMATE keeps its own folder (APPFOLDER) and leaves the
 	// folders of Snes9x GX (snes9x) and Snes9x TX (snes9xtx) alone, so the
@@ -771,31 +776,42 @@ bool LoadPrefs()
 	else if(GCSettings.LoadMethod == DEVICE_USB)
 		usbMounted = ChangeInterface(DEVICE_USB, NOTSILENT);
 
+	STARTUP_NOTE("prefs: device mounted (sd %d usb %d)", sdMounted, usbMounted);
 	// attempt to create directories if they don't exist
 	if((GCSettings.LoadMethod == DEVICE_SD && sdMounted) || (GCSettings.LoadMethod == DEVICE_USB && usbMounted) ) {
 		char dirPath[MAXPATHLEN];
 		sprintf(dirPath, "%s%s", pathPrefix[GCSettings.LoadMethod], GCSettings.ScreenshotsFolder);
+		STARTUP_NOTE("prefs: folder %s", dirPath);
 		CreateDirectory(dirPath);
 		sprintf(dirPath, "%s%s", pathPrefix[GCSettings.LoadMethod], GCSettings.CoverFolder);
+		STARTUP_NOTE("prefs: folder %s", dirPath);
 		CreateDirectory(dirPath);
 		sprintf(dirPath, "%s%s", pathPrefix[GCSettings.LoadMethod], GCSettings.ArtworkFolder);
+		STARTUP_NOTE("prefs: folder %s", dirPath);
 		CreateDirectory(dirPath);
 		sprintf(dirPath, "%s%s", pathPrefix[GCSettings.LoadMethod], GCSettings.CheatFolder);
+		STARTUP_NOTE("prefs: folder %s", dirPath);
 		CreateDirectory(dirPath);
 		sprintf(dirPath, "%s%s/bezels", pathPrefix[GCSettings.LoadMethod], APPFOLDER);
+		STARTUP_NOTE("prefs: folder %s", dirPath);
 		CreateDirectory(dirPath);
 		sprintf(dirPath, "%s%s", pathPrefix[GCSettings.LoadMethod], MENU_MUSIC_FOLDER);
+		STARTUP_NOTE("prefs: folder %s", dirPath);
 		CreateDirectory(dirPath);
 	}
 
+	STARTUP_NOTE("prefs: folders ready");
 	if(GCSettings.videomode > 0) {
 		ResetVideo_Menu();
+		STARTUP_NOTE("prefs: video mode set");
 	}
 
 	ChangeLanguage();
+	STARTUP_NOTE("prefs: language set");
 
 #ifdef HW_RVL
 	MenuMusicInit();
+	STARTUP_NOTE("prefs: music list ready");
 #endif
 	return prefFound;
 }
