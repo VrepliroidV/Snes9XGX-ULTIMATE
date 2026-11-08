@@ -11,6 +11,8 @@ jobs:
   build:
     name: Build Snes9x GX ULTIMATE
     runs-on: ubuntu-latest
+    permissions:
+      contents: write   # the dev test build is pushed to the dev-build branch
     strategy:
       fail-fast: false
       matrix:
@@ -78,6 +80,22 @@ jobs:
         name: Snes9xGXUltimate
         path: |
          dist/Snes9xGXUltimate/
+
+    # Test builds of the dev branch: the same files on the dev-build branch
+    - name: Publish the dev test build
+      if: ${{ matrix.image == 'Wii' && github.event_name == 'push' && github.ref == 'refs/heads/dev' }}
+      shell: bash
+      env:
+        GH_TOKEN: ${{ github.token }}
+      run: |
+        command -v git >/dev/null || (apt-get update && apt-get install -y --no-install-recommends git ca-certificates)
+        cd dist/Snes9xGXUltimate
+        git init -q -b dev-build
+        git config user.name "github-actions[bot]"
+        git config user.email "41898299+github-actions[bot]@users.noreply.github.com"
+        git add -A
+        git commit -q -m "Wii build of ${GITHUB_SHA::7}"
+        git push -q -f "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" HEAD:dev-build
     
     - name: Build GameCube
       if: ${{ matrix.image == 'GameCube' }}

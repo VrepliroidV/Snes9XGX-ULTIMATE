@@ -1247,7 +1247,9 @@ update_video (int width, int height)
 		else
 			fscale = 1;
 #endif
+		STARTUP_NOTE("video: emulator mode");
 		ResetVideo_Emu ();	// reset video to emulator rendering settings
+		STARTUP_NOTE("video: emulator mode set");
 #ifdef HW_RVL
 		memset(filtermem, 0, FILTERMEM_SIZE);
 #endif

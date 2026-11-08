@@ -490,6 +490,7 @@ void FindAndSelectLastLoadedFile ()
 		}
 	}
 
+	STARTUP_NOTE("last file '%s' at %d of %d", GCSettings.LastFileLoaded, indexFound, browser.numEntries);
 	// move to this file
 	if(indexFound > 0)
 	{
@@ -665,8 +666,10 @@ ParseDirectory(bool waitParse, bool filter)
 		browser.numEntries++;
 	}
 
+	STARTUP_NOTE("dir opened: %s", browser.dir);
 	parseHalt = false;
 	ParseDirEntries(); // index first 20 entries
+	STARTUP_NOTE("first entries: %d", browser.numEntries);
 
 	LWP_ResumeThread(parsethread); // index remaining entries
 
@@ -680,6 +683,7 @@ ParseDirectory(bool waitParse, bool filter)
 		CancelAction();
 	}
 
+	STARTUP_NOTE("dir parsed: %d entries", browser.numEntries);
 	return browser.numEntries;
 }
 
@@ -811,6 +815,7 @@ LoadFile (char * rbuffer, char *filepath, size_t length, size_t buffersize, bool
 				continue;
 			}
 
+			STARTUP_NOTE("reading %s", filepath);
 			if (IsZipFile (zipbuffer))
 			{
 				size = UnZipBuffer ((unsigned char *)rbuffer, buffersize); // unzip
@@ -836,6 +841,7 @@ LoadFile (char * rbuffer, char *filepath, size_t length, size_t buffersize, bool
 						offset += readsize;
 					}
 					size = offset;
+					STARTUP_NOTE("read %u bytes", (unsigned) size);
 					CancelAction();
 				}
 			}

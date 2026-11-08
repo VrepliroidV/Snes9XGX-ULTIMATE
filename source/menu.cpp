@@ -1104,7 +1104,9 @@ static int MenuGameSelection()
 
 	// populate initial directory listing
 	selectLoadedFile = 1;
+	STARTUP_NOTE("game list: opening");
 	OpenGameList();
+	STARTUP_NOTE("game list: %d entries, selected %d", browser.numEntries, browser.selIndex);
 
 	gameBrowser.ResetState();
 	gameBrowser.fileList[0]->SetState(STATE_SELECTED);
@@ -1154,6 +1156,7 @@ static int MenuGameSelection()
 				}
 				else
 				{
+					STARTUP_NOTE("game chosen: %s", browserList[browser.selIndex].filename);
 					mainWindow->SetState(STATE_DISABLED);
 					SavePrefs(SILENT);
 					if(BrowserLoadFile())
@@ -1172,7 +1175,10 @@ static int MenuGameSelection()
 			snprintf(imagePath, MAXJOLIET, "%s%s/%s.png", pathPrefix[GCSettings.LoadMethod], getImageFolder(), browserList[browser.selIndex].displayname);
 			
 			int width, height;
-			if(DecodePNGFromFile(imagePath, &width, &height, imgBuffer, 640, 480))
+			STARTUP_NOTE("preview: %s", imagePath);
+			bool previewOk = DecodePNGFromFile(imagePath, &width, &height, imgBuffer, 640, 480);
+			STARTUP_NOTE("preview: %s", previewOk ? "shown" : "none");
+			if(previewOk)
 			{
 				preview.SetImage(imgBuffer, width, height);
 				preview.SetScale( MIN(225.0f / width, 235.0f / height) );
@@ -5527,10 +5533,12 @@ MainMenu (int menu)
 		usleep(THREAD_SLEEP);
 	}
 
+	STARTUP_NOTE("menu: closing");
 	CancelAction();
 	HaltGui();
 
 	MenuMusicLeave();
+	STARTUP_NOTE("menu: music stopped");
 	DeleteMusicPlayer();
 	playerSoundOver = playerSoundClick = NULL;
 	delete btnLogo;
@@ -5546,6 +5554,7 @@ MainMenu (int menu)
 
 	ClearScreenshot();
 
+	STARTUP_NOTE("menu: closed");
 	// wait for keys to be depressed
 	while(MenuRequested())
 	{

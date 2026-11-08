@@ -481,6 +481,7 @@ int WiiFileLoader()
 		return 0;
 
 	SNESROMSize = Memory.HeaderRemove(size, Memory.ROM);
+	STARTUP_NOTE("file %u bytes, ROM %d", (unsigned) size, SNESROMSize);
 	bsxBiosLoadFailed = false;
 
 	if(isBSX())
@@ -520,11 +521,14 @@ int BrowserLoadFile()
 	snprintf(GCSettings.LastFileLoaded, MAXPATHLEN, "%s", browserList[browser.selIndex].filename);
 	strncpy(Memory.ROMFilePath, browser.dir, PATH_MAX);
 
+	STARTUP_NOTE("load game: %s", browserList[browser.selIndex].filename);
 	SNESROMSize = 0;
 	S9xDeleteCheats();
 	GameSettingsLoad(); // the game's own video, audio and emulation options, if any
 	ApplyRegionSetting(); // the core clears the force flags after each load
+	STARTUP_NOTE("LoadROM start");
 	Memory.LoadROM("ROM");
+	STARTUP_NOTE("LoadROM done: size %d, %s", SNESROMSize, Memory.ROMName);
 
 	if (SNESROMSize == 0)
 	{
@@ -533,6 +537,7 @@ int BrowserLoadFile()
 	else
 	{
 		S9xAutoOCLoadGame(); // the automatic overclock starts from none
+		STARTUP_NOTE("auto overclock ready");
 
 		// load SRAM or snapshot
 		if (GCSettings.AutoLoad == 1)
@@ -540,7 +545,9 @@ int BrowserLoadFile()
 		else if (GCSettings.AutoLoad == 2)
 			LoadSnapshotAuto(SILENT);
 
+		STARTUP_NOTE("saves loaded");
 		AutoCropLoadGame(); // black-border layouts learned for this game
+		STARTUP_NOTE("auto crop ready");
 
 		ResetBrowser();
 		loaded = 1;

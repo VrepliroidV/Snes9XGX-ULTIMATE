@@ -572,15 +572,19 @@ int main(int argc, char *argv[])
 
 			SNESROMSize == 0 ? MainMenu(MENU_GAMESELECTION) : MainMenu(MENU_GAME);
 		}
+		STARTUP_NOTE("main: starting the game");
 
 #ifdef HW_RVL
+		STARTUP_NOTE("main: filter");
 		SelectFilterMethod();
 #endif
 		if (firstRun)
 		{
 			firstRun = false;
 			ApplyEmulationSettings();
+			STARTUP_NOTE("main: first reset");
 			GCSettings.sfxOverclock > 0 ? S9xResetSuperFX() : S9xReset();
+			STARTUP_NOTE("main: reset done");
 		}
 		
 		autoboot = false;
@@ -606,9 +610,12 @@ int main(int argc, char *argv[])
 		// since we're starting emulation again
 		HaltDeviceThread();
 
+		STARTUP_NOTE("main: bezel");
 		BezelPrepare(); // the bezel of the game (480i/480p), before the audio starts
-
+		STARTUP_NOTE("main: audio");
 		AudioStart();
+		STARTUP_NOTE("main: emulation loop");
+		int notedFrames = 0;
 
 		FrameTimer = 0;
 		setFrameTimerMethod(); // set frametimer method every time a ROM is loaded
@@ -618,7 +625,9 @@ int main(int argc, char *argv[])
 
 		while(1) // emulation loop
 		{
+			if (notedFrames < 3) STARTUP_NOTE("main: frame %d", notedFrames);
 			S9xMainLoop();
+			if (notedFrames < 3) { STARTUP_NOTE("main: frame %d done", notedFrames); notedFrames++; }
 			if (AutoOC.enabled)
 				S9xAutoOCEndFrame();
 			ReportButtons();

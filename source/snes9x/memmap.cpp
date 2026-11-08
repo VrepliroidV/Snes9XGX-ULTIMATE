@@ -1439,8 +1439,10 @@ bool8 CMemory::LoadROM (const char *filename)
             return (FALSE);
 
         CheckForAnyPatch(filename, HeaderCount != 0, totalFileSize);
+        STARTUP_NOTE("core: file in memory (%d), checking the format", totalFileSize);
     }
     while(!LoadROMInt(totalFileSize));
+    STARTUP_NOTE("core: ROM ready, %s, size %X, ExHiROM %d", HiROM ? "HiROM" : "LoROM", CalculatedSize, ExtendedFormat);
 
     return TRUE;
 }

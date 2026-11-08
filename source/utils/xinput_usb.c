@@ -326,8 +326,8 @@ static void xi_log_flush_now(void)
 	xi_log_flush();
 }
 
-#define XI_NOTE_MAX     60
-#define XI_NOTE_SECONDS 30
+#define XI_NOTE_MAX     400
+#define XI_NOTE_SECONDS 1200
 
 void XInput_LogNote(const char *fmt, ...)
 {
