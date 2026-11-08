@@ -9,6 +9,16 @@ Snes9x TX is a fork of Snes9x GX by Tantric: https://github.com/dborth/snes9xgx
 Update History
 --------------
 
+---Snes9x GX ULTIMATE 1.1.6 (VrepliroidV)---
+---November 7 2026---
+
+- The start-up no longer stays on the background with a USB drive
+  plugged in: the menu music is listed from the music folder of the load
+  device (the SD card unless it is the USB drive), and from the other
+  device only when that one has none. The start-up listed the SD card
+  and then the USB drive, and the reading of an asleep or slow drive
+  could hold it there for good.
+
 ---Snes9x GX ULTIMATE 1.1.5 (VrepliroidV)---
 ---November 1 2026---
 

@@ -1,4 +1,8 @@
-**Snes9x GX ULTIMATE 1.1.5**: emulador de Super Nintendo para Wii, baseado no [Snes9x TX 1.1.3](https://github.com/saulfabregwiivc/Snes9xTX) (Tanooki), que é um fork do [Snes9x GX](https://github.com/dborth/snes9xgx) (Tantric). *English below.*
+**Snes9x GX ULTIMATE 1.1.6**: emulador de Super Nintendo para Wii, baseado no [Snes9x TX 1.1.3](https://github.com/saulfabregwiivc/Snes9xTX) (Tanooki), que é um fork do [Snes9x GX](https://github.com/dborth/snes9xgx) (Tantric). *English below.*
+
+## Novidades da 1.1.6
+
+- **Correção: o emulador às vezes ficava parado no fundo com o logo ao abrir**, com um HD ou pendrive ligado no USB do Wii. Ao abrir, ele procurava as músicas do menu no SD e depois no USB, e a leitura do USB às vezes nunca terminava (com um HD dormindo ou lento, por exemplo). Agora as músicas vêm da pasta `snes9xgxultimate/music` do aparelho de onde você carrega os jogos (o SD, a não ser que seja o USB). A pasta do outro aparelho só é usada quando essa não tem nenhuma música. Assim, com os jogos e as músicas no SD, o USB não é lido na abertura.
 
 ## Novidades da 1.1.5
 
@@ -69,7 +73,11 @@ O `Snes9xGXUltimate-GameCube.zip` traz a versão de GameCube: tem as molduras, o
 
 ## English
 
-**Snes9x GX ULTIMATE 1.1.5**: Super Nintendo emulator for Wii, based on Snes9x TX 1.1.3 (Tanooki), a fork of Snes9x GX (Tantric).
+**Snes9x GX ULTIMATE 1.1.6**: Super Nintendo emulator for Wii, based on Snes9x TX 1.1.3 (Tanooki), a fork of Snes9x GX (Tantric).
+
+New in 1.1.6:
+
+- **Fixed: the emulator could stay on the background with the logo at start-up** with a USB hard drive or pen drive plugged in. At start-up it listed the menu music of the SD card and then of the USB drive, and the reading of the USB drive could never end (an asleep or slow hard drive, for example). Now the music comes from the `snes9xgxultimate/music` folder of the device the games are loaded from (the SD card unless it is the USB drive); the other device's folder is used only when that one has no music. With the games and the music on the SD card, the USB drive is not read at start-up.
 
 New in 1.1.5:
 

@@ -31,8 +31,6 @@
 
 #define MENU_MUSIC_MAX_SIZE (12 * 1024 * 1024) // MEM2 heap room (20 MB in all, ~6 MB in use)
 
-static const int musicDevices[] = { DEVICE_SD, DEVICE_USB };
-
 static mutex_t musicLock = LWP_MUTEX_NULL;
 static char (*names)[BEZEL_NAME_MAX] = NULL; // the music folder
 static int count = 0;
@@ -57,13 +55,26 @@ static void Unlock()
 	LWP_MutexUnlock(musicLock);
 }
 
+// The device the games are loaded from first (SD unless it is the USB
+// drive), then the other one.
+static int MusicDevice(int k)
+{
+	const int first = (GCSettings.LoadMethod == DEVICE_USB) ? DEVICE_USB : DEVICE_SD;
+	if (k == 0)
+		return first;
+	return (first == DEVICE_SD) ? DEVICE_USB : DEVICE_SD;
+}
+
+// The music folder of the load device, or the other device's when that one
+// has none: a USB drive is not read at start-up when the SD card has the
+// music (an asleep or slow drive could hold the start-up there).
 int MenuMusicList(char (*list)[BEZEL_NAME_MAX], int max)
 {
 	char dir[MAXPATHLEN];
 	int n = 0;
-	for (unsigned int i = 0; i < sizeof(musicDevices) / sizeof(musicDevices[0]); i++)
+	for (int k = 0; k < 2 && n == 0; k++)
 	{
-		snprintf(dir, sizeof(dir), "%s%s", pathPrefix[musicDevices[i]], MENU_MUSIC_FOLDER);
+		snprintf(dir, sizeof(dir), "%s%s", pathPrefix[MusicDevice(k)], MENU_MUSIC_FOLDER);
 		n = bezel_list_ext(dir, ".ogg", list, n, max);
 	}
 	return n;
@@ -90,9 +101,9 @@ static void StopPlayer()
 static bool Find(const char *name, char *path)
 {
 	struct stat st;
-	for (unsigned int i = 0; i < sizeof(musicDevices) / sizeof(musicDevices[0]); i++)
+	for (int k = 0; k < 2; k++)
 	{
-		snprintf(path, MAXPATHLEN, "%s%s/%s", pathPrefix[musicDevices[i]], MENU_MUSIC_FOLDER, name);
+		snprintf(path, MAXPATHLEN, "%s%s/%s", pathPrefix[MusicDevice(k)], MENU_MUSIC_FOLDER, name);
 		if (stat(path, &st) == 0 && !S_ISDIR(st.st_mode))
 			return true;
 	}
